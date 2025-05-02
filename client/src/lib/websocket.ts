@@ -13,48 +13,57 @@ export function useWebSocket() {
   useEffect(() => {
     if (!user) return;
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    const socket = new WebSocket(wsUrl);
-    socketRef.current = socket;
+    try {
+      // Get the current URL
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const host = window.location.host;
+      const wsUrl = `${protocol}//${host}/ws`;
+      console.log("Connecting to WebSocket at:", wsUrl);
+      
+      const socket = new WebSocket(wsUrl);
+      socketRef.current = socket;
 
-    socket.onopen = () => {
-      setIsConnected(true);
-      // Authenticate the WebSocket connection
-      socket.send(
-        JSON.stringify({
-          type: "auth",
-          userId: user.id,
-          role: user.role,
-        })
-      );
-    };
+      socket.onopen = () => {
+        setIsConnected(true);
+        // Authenticate the WebSocket connection
+        socket.send(
+          JSON.stringify({
+            type: "auth",
+            userId: user._id || user.id, // Support both MongoDB _id and SQL id
+            role: user.role,
+          })
+        );
+      };
 
-    socket.onclose = () => {
-      setIsConnected(false);
-    };
+      socket.onclose = () => {
+        setIsConnected(false);
+      };
 
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        const handler = messageHandlers.current.get(data.type);
-        if (handler) {
-          handler(event);
+      socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          const handler = messageHandlers.current.get(data.type);
+          if (handler) {
+            handler(event);
+          }
+        } catch (error) {
+          console.error("WebSocket message error:", error);
         }
-      } catch (error) {
-        console.error("WebSocket message error:", error);
-      }
-    };
+      };
 
-    socket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
+      socket.onerror = (error) => {
+        console.error("WebSocket error:", error);
+      };
 
-    return () => {
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.close();
-      }
-    };
+      return () => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        }
+      };
+    } catch (error) {
+      console.error("Error setting up WebSocket:", error);
+      return () => {}; // Return empty cleanup function on error
+    }
   }, [user]);
 
   // Send a message through the WebSocket
@@ -135,11 +144,14 @@ export function useBusLocationUpdates() {
       (event) => {
         const data = JSON.parse(event.data);
         setBusLocations((prev) =>
-          prev.map((bus) =>
-            bus.id === data.data.busId
+          prev.map((bus) => {
+            // Support both MongoDB _id and SQL id
+            const busId = bus._id || bus.id;
+            const dataBusId = data.data.busId;
+            return busId === dataBusId
               ? { ...bus, currentLocation: data.data.location }
-              : bus
-          )
+              : bus;
+          })
         );
       }
     );
