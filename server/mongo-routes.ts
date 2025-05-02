@@ -125,11 +125,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/buses", async (req, res) => {
     try {
       const allBuses = await Bus.find({})
-        .populate('driverId')
-        .populate('routeId')
+        .populate({
+          path: 'driverId',
+          select: 'username fullName email role' // Select only needed fields
+        })
+        .populate({
+          path: 'routeId',
+          select: 'name description status' // Select only needed fields
+        })
         .sort('-createdAt');
       
-      res.json(convertToPlainObject(allBuses));
+      // Rename fields to match the frontend expectations
+      const processedBuses = allBuses.map(bus => {
+        const busObj = bus.toObject();
+        
+        // If bus has a populated driverId, set it as driver
+        if (busObj.driverId && typeof busObj.driverId === 'object') {
+          busObj.driver = busObj.driverId;
+        }
+        
+        // If bus has a populated routeId, set it as route
+        if (busObj.routeId && typeof busObj.routeId === 'object') {
+          busObj.route = busObj.routeId;
+        }
+        
+        return busObj;
+      });
+      
+      res.json(convertToPlainObject(processedBuses));
     } catch (error) {
       console.error("Error fetching buses:", error);
       res.status(500).json({ message: "Failed to fetch buses" });
@@ -167,7 +190,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const newBus = new Bus(req.body);
       await newBus.save();
-      res.status(201).json(convertToPlainObject(newBus));
+      
+      // Populate the driver and route to return the same format as GET /api/buses
+      const populatedBus = await Bus.findById(newBus._id)
+        .populate({
+          path: 'driverId',
+          select: 'username fullName email role'
+        })
+        .populate({
+          path: 'routeId',
+          select: 'name description status'
+        });
+      
+      if (!populatedBus) {
+        return res.status(201).json(convertToPlainObject(newBus));
+      }
+      
+      // Apply the same processing as in the GET endpoint
+      const busObj = populatedBus.toObject();
+      
+      if (busObj.driverId && typeof busObj.driverId === 'object') {
+        busObj.driver = busObj.driverId;
+      }
+      
+      if (busObj.routeId && typeof busObj.routeId === 'object') {
+        busObj.route = busObj.routeId;
+      }
+      
+      res.status(201).json(convertToPlainObject(busObj));
     } catch (error) {
       console.error("Error creating bus:", error);
       res.status(500).json({ message: "Failed to create bus" });
@@ -177,13 +227,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/buses/:id", async (req, res) => {
     try {
       const { id } = req.params;
+      
+      // Update the bus document
       const updatedBus = await Bus.findByIdAndUpdate(id, req.body, { new: true });
       
       if (!updatedBus) {
         return res.status(404).json({ message: "Bus not found" });
       }
       
-      res.json(convertToPlainObject(updatedBus));
+      // Populate the driver and route information, same as GET and POST
+      const populatedBus = await Bus.findById(updatedBus._id)
+        .populate({
+          path: 'driverId',
+          select: 'username fullName email role'
+        })
+        .populate({
+          path: 'routeId',
+          select: 'name description status'
+        });
+      
+      if (!populatedBus) {
+        return res.json(convertToPlainObject(updatedBus));
+      }
+      
+      // Apply the same field mapping to maintain consistency
+      const busObj = populatedBus.toObject();
+      
+      if (busObj.driverId && typeof busObj.driverId === 'object') {
+        busObj.driver = busObj.driverId;
+      }
+      
+      if (busObj.routeId && typeof busObj.routeId === 'object') {
+        busObj.route = busObj.routeId;
+      }
+      
+      res.json(convertToPlainObject(busObj));
     } catch (error) {
       console.error("Error updating bus:", error);
       res.status(500).json({ message: "Failed to update bus" });

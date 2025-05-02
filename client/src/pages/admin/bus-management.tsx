@@ -137,11 +137,14 @@ export default function BusManagement() {
   // Create/Update bus mutation
   const busFormMutation = useMutation({
     mutationFn: async (values: BusFormValues) => {
+      // Make sure we're sending valid driver and route IDs to MongoDB
       const busData = {
         ...values,
         driverId: values.driverId && values.driverId !== "none" ? values.driverId : null,
         routeId: values.routeId && values.routeId !== "none" ? values.routeId : null,
       };
+      
+      console.log("Bus data to be sent:", busData);
       
       let res;
       if (editingBus) {
@@ -661,11 +664,15 @@ export default function BusManagement() {
                             <TableCell>
                               {bus.driver 
                                 ? (bus.driver.fullName || bus.driver.username) 
+                                : bus.driverId 
+                                ? <span>Loading driver...</span>
                                 : <span className="text-gray-400">Unassigned</span>}
                             </TableCell>
                             <TableCell>
                               {bus.route 
                                 ? bus.route.name 
+                                : bus.routeId
+                                ? <span>Loading route...</span>
                                 : <span className="text-gray-400">Unassigned</span>}
                             </TableCell>
                             <TableCell className="text-right">
