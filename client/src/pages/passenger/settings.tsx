@@ -116,7 +116,8 @@ export default function Settings() {
   // Update notification settings mutation
   const updateNotificationsMutation = useMutation({
     mutationFn: async (notificationData: NotificationFormValues) => {
-      const res = await apiRequest("PATCH", `/api/users/${user?._id}/notifications`, notificationData);
+      const userId = user?._id || user?.id;
+      const res = await apiRequest("PATCH", `/api/users/${userId}/notifications`, notificationData);
       return res.json();
     },
     onSuccess: () => {

@@ -91,10 +91,10 @@ export default function PassengerDashboard() {
                       <Bell className="mr-3 h-5 w-5" />
                       <span>How It Works</span>
                     </Link>
-                    <div className="flex items-center p-2 rounded-md text-gray-600 hover:bg-gray-50 hover:text-primary">
+                    <Link href="/passenger/settings" className="flex items-center p-2 rounded-md text-gray-600 hover:bg-gray-50 hover:text-primary">
                       <Settings className="mr-3 h-5 w-5" />
                       <span>Settings</span>
-                    </div>
+                    </Link>
                     <Button 
                       variant="destructive" 
                       className="mt-4"
@@ -150,10 +150,10 @@ export default function PassengerDashboard() {
                     <Bell className="mr-3 h-6 w-6" />
                     How It Works
                   </Link>
-                  <div className="text-gray-600 hover:bg-gray-50 hover:text-primary group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                  <Link href="/passenger/settings" className="text-gray-600 hover:bg-gray-50 hover:text-primary group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                     <Settings className="mr-3 h-6 w-6" />
                     Settings
-                  </div>
+                  </Link>
                   <Button 
                     variant="destructive" 
                     className="w-full mt-4"
@@ -266,10 +266,10 @@ export default function PassengerDashboard() {
                 <CreditCard className="text-xl" />
                 <span className="text-xs">Plans</span>
               </Link>
-              <Button variant="ghost" size="sm" className="flex flex-col items-center p-2 text-gray-500">
+              <Link href="/passenger/settings" className="flex flex-col items-center p-2 text-gray-500">
                 <Settings className="text-xl" />
                 <span className="text-xs">Settings</span>
-              </Button>
+              </Link>
             </div>
           </div>
         </div>

@@ -40,6 +40,7 @@ function Router() {
       <ProtectedRoute path="/passenger/subscriptions" roles={["passenger"]} component={SubscriptionPlans} />
       <ProtectedRoute path="/passenger/saved-routes" roles={["passenger"]} component={SavedRoutes} />
       <ProtectedRoute path="/passenger/how-it-works" roles={["passenger"]} component={HowItWorks} />
+      <ProtectedRoute path="/passenger/settings" roles={["passenger"]} component={Settings} />
       
       {/* Driver Routes */}
       <ProtectedRoute path="/driver" roles={["driver"]} component={DriverDashboard} />
