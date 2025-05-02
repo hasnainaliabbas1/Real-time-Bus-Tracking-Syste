@@ -86,7 +86,12 @@ export default function SavedRoutes() {
 
   // Filter out already saved routes
   const availableRoutes = allRoutes?.filter((route: any) => 
-    !savedRoutes?.some((savedRoute: any) => savedRoute.routeId === route.id)
+    !savedRoutes?.some((savedRoute: any) => 
+      savedRoute.routeId === route.id || 
+      savedRoute.routeId === route._id || 
+      savedRoute.route?.id === route.id ||
+      savedRoute.route?._id === route._id
+    )
   );
 
   const handleRemoveRoute = (id: number | string) => {
@@ -235,7 +240,7 @@ export default function SavedRoutes() {
                             size="sm" 
                             variant="ghost"
                             className="h-7 w-7 rounded-full p-0"
-                            onClick={() => handleSaveRoute(route.id)}
+                            onClick={() => handleSaveRoute(route.id || route._id)}
                             disabled={saveRouteMutation.isPending}
                           >
                             <Star className="h-4 w-4 text-primary" />
@@ -269,7 +274,7 @@ export default function SavedRoutes() {
                       <span>{route.name}</span>
                       <Button 
                         size="sm" 
-                        onClick={() => handleSaveRoute(route.id)}
+                        onClick={() => handleSaveRoute(route.id || route._id)}
                         disabled={saveRouteMutation.isPending}
                       >
                         <Star className="h-4 w-4 mr-2" />
