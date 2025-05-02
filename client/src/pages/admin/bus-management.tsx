@@ -116,7 +116,7 @@ export default function BusManagement() {
   const [editingBus, setEditingBus] = useState<any>(null);
   const [editingRoute, setEditingRoute] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [deletingItem, setDeletingItem] = useState<{id: number, type: 'bus' | 'route'} | null>(null);
+  const [deletingItem, setDeletingItem] = useState<{id: number | string, type: 'bus' | 'route'} | null>(null);
 
   // Fetch buses data
   const { data: busesData, isLoading: isLoadingBuses } = useQuery({
@@ -173,7 +173,7 @@ export default function BusManagement() {
     mutationFn: async (values: RouteFormValues) => {
       let res;
       if (editingRoute) {
-        res = await apiRequest("PUT", `/api/routes/${editingRoute.id}`, values);
+        res = await apiRequest("PUT", `/api/routes/${editingRoute._id || editingRoute.id}`, values);
       } else {
         res = await apiRequest("POST", "/api/routes", values);
       }
@@ -299,7 +299,7 @@ export default function BusManagement() {
     });
   };
 
-  const handleDeleteItem = (id: number, type: 'bus' | 'route') => {
+  const handleDeleteItem = (id: number | string, type: 'bus' | 'route') => {
     setDeletingItem({ id, type });
     setIsDeleteDialogOpen(true);
   };
