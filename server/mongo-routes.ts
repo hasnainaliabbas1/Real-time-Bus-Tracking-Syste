@@ -542,10 +542,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Not authenticated" });
       }
       
-      // Create new saved route
+      // Extract routeId from request body
+      const { routeId } = req.body;
+      
+      // Find the route to ensure it exists and to get its details
+      const route = await Route.findById(routeId);
+      if (!route) {
+        return res.status(404).json({ message: "Route not found" });
+      }
+      
+      // Create new saved route with explicitly set routeId
       const newSavedRoute = new SavedRoute({
-        ...req.body,
-        userId: req.user._id
+        userId: req.user._id,
+        routeId: route._id, // Explicitly set routeId
+        name: req.body.name || route.name || "Saved Route" // Ensure name is provided
       });
       
       await newSavedRoute.save();
@@ -622,14 +632,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const incidentData = convertToPlainObject(newIncident);
       
       // Notify admin users via WebSocket
-      for (const [, client] of connectedClients.entries()) {
+      Array.from(connectedClients.entries()).forEach(([_, client]) => {
         if (client.role === 'admin' && client.ws.readyState === WebSocket.OPEN) {
           client.ws.send(JSON.stringify({
             type: 'newIncident',
             data: incidentData
           }));
         }
-      }
+      });
       
       res.status(201).json(incidentData);
     } catch (error) {

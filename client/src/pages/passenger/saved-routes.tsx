@@ -62,8 +62,13 @@ export default function SavedRoutes() {
       // Find route to get its name
       const route = allRoutes?.find((r: any) => r.id === routeId || r._id === routeId);
       
+      // Use the MongoDB _id when available, otherwise use the SQL id
+      const actualRouteId = route?._id || route?.id || routeId;
+      
+      console.log("Saving route with ID:", actualRouteId, "Route object:", route);
+      
       const res = await apiRequest("POST", "/api/saved-routes", { 
-        routeId, 
+        routeId: actualRouteId, 
         name: route?.name || "Saved Route"  // Add the required name field
       });
       return res.json();
