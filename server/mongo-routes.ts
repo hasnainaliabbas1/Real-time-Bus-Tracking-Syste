@@ -82,7 +82,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               await driverBus.save();
               
               // Broadcast to passengers
-              Array.from(connectedClients.entries()).forEach(([_, client]) => {
+              connectedClients.forEach((client, _) => {
                 if (client.role === 'passenger' && client.ws.readyState === WebSocket.OPEN) {
                   client.ws.send(JSON.stringify({
                     type: 'busLocationUpdate',
@@ -632,7 +632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const incidentData = convertToPlainObject(newIncident);
       
       // Notify admin users via WebSocket
-      Array.from(connectedClients.entries()).forEach(([_, client]) => {
+      connectedClients.forEach((client, _) => {
         if (client.role === 'admin' && client.ws.readyState === WebSocket.OPEN) {
           client.ws.send(JSON.stringify({
             type: 'newIncident',
@@ -654,7 +654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { status } = req.body;
       
       // Update resolved_at if status is 'resolved'
-      const updateData: any = { status };
+      const updateData = { status };
       if (status === 'resolved') {
         updateData.resolvedAt = new Date();
       }

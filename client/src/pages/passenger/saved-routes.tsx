@@ -58,9 +58,9 @@ export default function SavedRoutes() {
 
   // Save new route mutation
   const saveRouteMutation = useMutation({
-    mutationFn: async (routeId: number | string) => {
+    mutationFn: async (routeId) => {
       // Find route to get its name
-      const route = allRoutes?.find((r: any) => r.id === routeId || r._id === routeId);
+      const route = allRoutes?.find((r) => r.id === routeId || r._id === routeId);
       
       // Use the MongoDB _id when available, otherwise use the SQL id
       const actualRouteId = route?._id || route?.id || routeId;
@@ -90,8 +90,8 @@ export default function SavedRoutes() {
   });
 
   // Filter out already saved routes
-  const availableRoutes = allRoutes?.filter((route: any) => 
-    !savedRoutes?.some((savedRoute: any) => 
+  const availableRoutes = allRoutes?.filter((route) => 
+    !savedRoutes?.some((savedRoute) => 
       savedRoute.routeId === route.id || 
       savedRoute.routeId === route._id || 
       savedRoute.route?.id === route.id ||
@@ -99,7 +99,7 @@ export default function SavedRoutes() {
     )
   );
 
-  const handleRemoveRoute = (id: number | string) => {
+  const handleRemoveRoute = (id) => {
     setDeletingRouteId(id); // Now our state can handle both number and string
   };
 
@@ -109,7 +109,7 @@ export default function SavedRoutes() {
     }
   };
 
-  const handleSaveRoute = (routeId: number | string) => {
+  const handleSaveRoute = (routeId) => {
     saveRouteMutation.mutate(routeId);
   };
 
@@ -145,7 +145,7 @@ export default function SavedRoutes() {
           </div>
         ) : savedRoutes?.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {savedRoutes.map((savedRoute: any) => (
+            {savedRoutes.map((savedRoute) => (
               <Card key={savedRoute.id || savedRoute._id}>
                 <CardHeader className="pb-3">
                   <div className="flex justify-between">
@@ -235,7 +235,7 @@ export default function SavedRoutes() {
                     <Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
                   ) : availableRoutes?.length > 0 ? (
                     <div className="w-full max-h-[150px] overflow-y-auto space-y-2 p-2 border rounded-md bg-white">
-                      {availableRoutes.map((route: any) => (
+                      {availableRoutes.map((route) => (
                         <div 
                           key={route.id || route._id} 
                           className="flex justify-between items-center p-2 hover:bg-gray-50 rounded"
@@ -271,7 +271,7 @@ export default function SavedRoutes() {
               ) : allRoutes?.length > 0 ? (
                 <div className="max-w-md mx-auto space-y-2">
                   <p className="text-sm font-medium text-gray-900 mb-2">Available Routes:</p>
-                  {allRoutes.slice(0, 3).map((route: any) => (
+                  {allRoutes.slice(0, 3).map((route) => (
                     <div 
                       key={route.id || route._id} 
                       className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
