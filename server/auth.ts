@@ -4,12 +4,24 @@ import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import { storage } from "./storage";
-import { User as SelectUser } from "@shared/schema";
+// Get the MongoDB storage instance from global scope
+const getStorage = () => (global as any).mongoStorage;
+
+// Define User interface for MongoDB
+interface MongoUser {
+  _id: string;
+  username: string;
+  password: string;
+  email: string;
+  role: string;
+  fullName?: string;
+  phone?: string;
+  createdAt: Date;
+}
 
 declare global {
   namespace Express {
-    interface User extends SelectUser {}
+    interface User extends MongoUser {}
   }
 }
 
@@ -33,7 +45,7 @@ export function setupAuth(app: Express) {
     secret: process.env.SESSION_SECRET || "bustrack-secret-key",
     resave: false,
     saveUninitialized: false,
-    store: storage.sessionStore,
+    store: getStorage().sessionStore,
     cookie: {
       secure: process.env.NODE_ENV === "production",
       maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
@@ -48,7 +60,7 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        const user = await storage.getUserByUsername(username);
+        const user = await getStorage().getUserByUsername(username);
         if (!user || !(await comparePasswords(password, user.password))) {
           return done(null, false);
         } else {
@@ -60,10 +72,10 @@ export function setupAuth(app: Express) {
     }),
   );
 
-  passport.serializeUser((user, done) => done(null, user.id));
-  passport.deserializeUser(async (id: number, done) => {
+  passport.serializeUser((user, done) => done(null, user._id));
+  passport.deserializeUser(async (id: string, done) => {
     try {
-      const user = await storage.getUser(id);
+      const user = await getStorage().getUser(id);
       done(null, user);
     } catch (error) {
       done(error);
@@ -72,17 +84,17 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      const existingUser = await storage.getUserByUsername(req.body.username);
+      const existingUser = await getStorage().getUserByUsername(req.body.username);
       if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
       }
 
-      const existingEmail = await storage.getUserByEmail(req.body.email);
+      const existingEmail = await getStorage().getUserByEmail(req.body.email);
       if (existingEmail) {
         return res.status(400).json({ message: "Email already exists" });
       }
 
-      const user = await storage.createUser({
+      const user = await getStorage().createUser({
         ...req.body,
         password: await hashPassword(req.body.password),
       });

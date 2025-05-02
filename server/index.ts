@@ -1,8 +1,12 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
+import cors from "cors";
 import { setupVite, serveStatic, log } from "./vite";
+import { initializeStorage } from "./mongo-storage";
+import { registerRoutes } from "./mongo-routes";
+import { setupAuth } from "./auth";
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -37,7 +41,18 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = await registerRoutes(app);
+  try {
+    // Initialize MongoDB storage
+    const storage = await initializeStorage();
+    
+    // Set storage in global scope for access in auth and routes
+    (global as any).mongoStorage = storage;
+    
+    // Setup authentication with the initialized storage
+    setupAuth(app);
+    
+    // Register routes
+    const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -67,4 +82,8 @@ app.use((req, res, next) => {
   }, () => {
     log(`serving on port ${port}`);
   });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
 })();
