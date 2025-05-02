@@ -15,6 +15,7 @@ import TicketBooking from "@/pages/passenger/ticket-booking";
 import SubscriptionPlans from "@/pages/passenger/subscription-plans";
 import SavedRoutes from "@/pages/passenger/saved-routes";
 import HowItWorks from "@/pages/passenger/how-it-works";
+import Settings from "@/pages/passenger/settings";
 
 // Driver Pages
 import DriverDashboard from "@/pages/driver/dashboard";
