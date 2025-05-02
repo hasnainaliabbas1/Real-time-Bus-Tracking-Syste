@@ -139,13 +139,13 @@ export default function BusManagement() {
     mutationFn: async (values: BusFormValues) => {
       const busData = {
         ...values,
-        driverId: values.driverId ? parseInt(values.driverId) : null,
-        routeId: values.routeId ? parseInt(values.routeId) : null,
+        driverId: values.driverId && values.driverId !== "none" ? values.driverId : null,
+        routeId: values.routeId && values.routeId !== "none" ? values.routeId : null,
       };
       
       let res;
       if (editingBus) {
-        res = await apiRequest("PUT", `/api/buses/${editingBus.id}`, busData);
+        res = await apiRequest("PUT", `/api/buses/${editingBus._id || editingBus.id}`, busData);
       } else {
         res = await apiRequest("POST", "/api/buses", busData);
       }
@@ -198,8 +198,8 @@ export default function BusManagement() {
 
   // Delete mutation
   const deleteMutation = useMutation({
-    mutationFn: async ({ id, type }: { id: number; type: 'bus' | 'route' }) => {
-      const res = await apiRequest("DELETE", `/${type === 'bus' ? 'buses' : 'routes'}/${id}`);
+    mutationFn: async ({ id, type }: { id: number | string; type: 'bus' | 'route' }) => {
+      const res = await apiRequest("DELETE", `/api/${type === 'bus' ? 'buses' : 'routes'}/${id}`);
       return { id, type };
     },
     onSuccess: (data) => {
@@ -229,8 +229,8 @@ export default function BusManagement() {
       busNumber: "",
       capacity: 30,
       status: "inactive",
-      driverId: "",
-      routeId: "",
+      driverId: "none",
+      routeId: "none",
     },
   });
 
@@ -264,9 +264,9 @@ export default function BusManagement() {
       capacity: bus.capacity,
       status: bus.status,
       driverId: bus.driverId ? bus.driverId.toString() : 
-                bus.driver?._id ? bus.driver._id.toString() : "",
+                bus.driver?._id ? bus.driver._id.toString() : "none",
       routeId: bus.routeId ? bus.routeId.toString() : 
-               bus.route?._id ? bus.route._id.toString() : "",
+               bus.route?._id ? bus.route._id.toString() : "none",
     });
   };
 
@@ -276,8 +276,8 @@ export default function BusManagement() {
       busNumber: "",
       capacity: 30,
       status: "inactive",
-      driverId: "",
-      routeId: "",
+      driverId: "none",
+      routeId: "none",
     });
   };
 
@@ -491,7 +491,7 @@ export default function BusManagement() {
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    <SelectItem value="">None</SelectItem>
+                                    <SelectItem value="none">None</SelectItem>
                                     {isLoadingDrivers ? (
                                       <SelectItem value="loading" disabled>
                                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -523,7 +523,7 @@ export default function BusManagement() {
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    <SelectItem value="">None</SelectItem>
+                                    <SelectItem value="none">None</SelectItem>
                                     {isLoadingRoutes ? (
                                       <SelectItem value="loading" disabled>
                                         <Loader2 className="h-4 w-4 animate-spin" />
