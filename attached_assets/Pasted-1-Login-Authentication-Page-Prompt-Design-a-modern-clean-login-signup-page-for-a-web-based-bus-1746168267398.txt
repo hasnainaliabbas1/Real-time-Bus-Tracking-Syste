@@ -1,0 +1,131 @@
+1. Login & Authentication Page
+Prompt:
+
+Design a modern, clean login/signup page for a web-based bus tracking system with role-based authentication (Passenger, Driver, Admin). Include email/password authentication fields and a Google login button. After authentication, determine the role from MongoDB and redirect users to their respective dashboards. Use a split layout with a dynamic map or bus-themed animation on one side and the login panel on the other.
+
+📦 MongoDB: users collection stores role, email, password, etc.
+
+🧭 2. Passenger Dashboard
+Prompt:
+
+Design a passenger dashboard with a full-width map view (Google Maps API) showing animated buses in real-time. Display search and filter options to find buses by location or route. Add floating cards to show Estimated Arrival Times (ETA), route details, and status (On Time, Delayed). Include a sidebar with icons for:
+
+Saved Routes
+
+Ticket Booking
+
+Subscription Plans
+
+Notifications
+
+Settings
+
+📦 MongoDB: fetch bus data from buses, user info from users, and route info from routes.
+
+🎟 3. Ticket Booking Page (Passenger)
+Prompt:
+
+Design a clean ticket booking UI for passengers. Include dropdowns or typeahead inputs for selecting: Route → Stop → Time. Use Stripe/PayPal for online payment integration. Upon booking, display a QR code with ticket details and confirmation message. Add a section to view "My Tickets" with current and past tickets.
+
+📦 MongoDB:
+
+Save booking in tickets collection
+
+Link to users and routes
+
+💳 4. Subscription Plans Page (Passenger)
+Prompt:
+
+Design a subscription plan UI where passengers can choose between daily, weekly, or monthly travel passes. Use modern pricing cards with icons, pricing, benefits, and a “Subscribe” button. Include a tab to view active subscriptions and billing history.
+
+📦 MongoDB: subscriptions stores plan details linked to user ID.
+
+ℹ 5. How It Works Page (Passenger)
+Prompt:
+
+Create a visually engaging onboarding screen with step-by-step instructions (e.g., Track, Book, Board). Use a carousel layout with illustrations or icons for each step. This page should appear for new users or be accessible from the sidebar.
+
+🚐 6. Driver Dashboard
+Prompt:
+
+Design a mobile-friendly dashboard for drivers with real-time map showing their current route and position. Include large buttons to:
+
+Start Shift
+
+End Shift
+
+Update Route Status (On Duty, Arrived, Delayed)
+
+Estimate Passengers Count
+
+Show assigned route details and update them live using Socket.io.
+
+📦 MongoDB: Drivers’ details in users, location updates in buses.
+
+📷 7. QR Code Scanner (Driver)
+Prompt:
+
+Design a real-time QR code scanner UI for drivers to validate passenger tickets. Once scanned, display a status: "Valid Ticket" or "Invalid/Expired", along with route/time details. Show recent scans in a collapsible history log below the scanner preview.
+
+📦 MongoDB: Validate against tickets collection, cross-check with route and timing.
+
+📍 8. Admin Dashboard (Overview)
+Prompt:
+
+Create a powerful admin dashboard UI with a sidebar (Users, Buses, Routes, Schedule, Incidents, Analytics). At the top, show KPIs:
+
+Active Buses
+
+Delayed Buses
+
+Tickets Sold Today
+
+Active Drivers
+
+The main section displays a real-time fleet map. Include tabs or widgets for quick status overview of each module.
+
+📦 MongoDB: Combine data from all collections (buses, users, routes, tickets, analytics).
+
+🛣 9. Bus & Route Management Page (Admin)
+Prompt:
+
+Build an admin page with a table view of all bus routes and buses. Include CRUD actions (Add, Edit, Delete) for both. Clicking a route should open a modal with: Route Name, Stops (multi-step input), Timings, and Assigned Drivers. Use map preview to draw route lines.
+
+📦 MongoDB:
+
+routes stores route & stops
+
+buses stores assignment and status
+
+📅 10. Schedule Management Page (Admin)
+Prompt:
+
+Design a calendar-style or timeline-based UI where admins can assign buses to routes and manage timings. Allow drag-and-drop functionality. Clicking on a schedule opens a modal with editable fields for timing, route, and stop intervals.
+
+📦 MongoDB: Use a schedule field in the buses or separate schedules collection.
+
+🚨 11. Incident Reports & SOS Alerts Page (Admin)
+Prompt:
+
+Design a real-time SOS and incident reporting dashboard. Display recent reports in cards or a timeline view with fields: Bus ID, Driver, Location, and Incident Type. Use a map with markers for each alert. Include filters (severity, time, resolved status) and buttons for actions like “Call Driver” or “Mark Resolved”.
+
+📦 MongoDB: incidents collection stores alerts and status logs.
+
+📊 12. Analytics & Reporting Page (Admin)
+Prompt:
+
+Create a rich analytics UI with visualizations (bar charts, pie charts, line graphs) showing:
+
+Daily Passenger Count
+
+On-Time Performance
+
+Peak Hours
+
+Subscription Trends
+
+Driver Activity
+
+Include export buttons for CSV/PDF and a date range picker.
+
+📦 MongoDB: Pull data from analytics, tickets, users, routes.
