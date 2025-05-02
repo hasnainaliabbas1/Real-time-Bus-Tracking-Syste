@@ -21,21 +21,21 @@ import { useState } from "react";
 export default function SavedRoutes() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [deletingRouteId, setDeletingRouteId] = useState<number | null>(null);
+  const [deletingRouteId, setDeletingRouteId] = useState<number | string | null>(null);
 
   // Fetch saved routes
-  const { data: savedRoutes, isLoading } = useQuery({
+  const { data: savedRoutes = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/saved-routes"],
   });
 
   // Fetch all routes for the "Add new" functionality
-  const { data: allRoutes, isLoading: isLoadingRoutes } = useQuery({
+  const { data: allRoutes = [], isLoading: isLoadingRoutes } = useQuery<any[]>({
     queryKey: ["/api/routes"],
   });
 
   // Remove saved route mutation
   const removeRouteMutation = useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: number | string) => {
       const res = await apiRequest("DELETE", `/api/saved-routes/${id}`);
       return res.json();
     },
@@ -58,7 +58,7 @@ export default function SavedRoutes() {
 
   // Save new route mutation
   const saveRouteMutation = useMutation({
-    mutationFn: async (routeId: number) => {
+    mutationFn: async (routeId: number | string) => {
       // Find route to get its name
       const route = allRoutes?.find((r: any) => r.id === routeId || r._id === routeId);
       
@@ -89,8 +89,8 @@ export default function SavedRoutes() {
     !savedRoutes?.some((savedRoute: any) => savedRoute.routeId === route.id)
   );
 
-  const handleRemoveRoute = (id: number) => {
-    setDeletingRouteId(id);
+  const handleRemoveRoute = (id: number | string) => {
+    setDeletingRouteId(id); // Now our state can handle both number and string
   };
 
   const confirmRemoveRoute = () => {
@@ -99,7 +99,7 @@ export default function SavedRoutes() {
     }
   };
 
-  const handleSaveRoute = (routeId: number) => {
+  const handleSaveRoute = (routeId: number | string) => {
     saveRouteMutation.mutate(routeId);
   };
 
@@ -136,7 +136,7 @@ export default function SavedRoutes() {
         ) : savedRoutes?.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {savedRoutes.map((savedRoute: any) => (
-              <Card key={savedRoute.id}>
+              <Card key={savedRoute.id || savedRoute._id}>
                 <CardHeader className="pb-3">
                   <div className="flex justify-between">
                     <CardTitle className="flex items-center">
@@ -147,7 +147,7 @@ export default function SavedRoutes() {
                       variant="ghost" 
                       size="icon"
                       className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => handleRemoveRoute(savedRoute.id)}
+                      onClick={() => handleRemoveRoute(savedRoute.id || savedRoute._id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -227,7 +227,7 @@ export default function SavedRoutes() {
                     <div className="w-full max-h-[150px] overflow-y-auto space-y-2 p-2 border rounded-md bg-white">
                       {availableRoutes.map((route: any) => (
                         <div 
-                          key={route.id} 
+                          key={route.id || route._id} 
                           className="flex justify-between items-center p-2 hover:bg-gray-50 rounded"
                         >
                           <span className="text-sm font-medium">{route.name}</span>

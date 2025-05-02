@@ -30,10 +30,14 @@ export function useWebSocket() {
       socket.onopen = () => {
         setIsConnected(true);
         // Authenticate the WebSocket connection
+        // Get the appropriate ID based on whether we're using MongoDB or SQL
+        const userId = typeof user.id === 'number' ? user.id : 
+                      (user as any)._id ? (user as any)._id : user.id;
+                      
         socket.send(
           JSON.stringify({
             type: "auth",
-            userId: user._id || user.id, // Support both MongoDB _id and SQL id
+            userId: userId,
             role: user.role,
           })
         );
