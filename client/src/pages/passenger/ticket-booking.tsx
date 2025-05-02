@@ -88,15 +88,15 @@ export default function TicketBooking() {
     },
   });
 
-  // Initialize form
+  // Initialize form with non-empty strings for select fields
   const form = useForm<TicketFormValues>({
     resolver: zodResolver(ticketFormSchema),
     defaultValues: {
       routeId: "",
       fromStopId: "",
       toStopId: "",
-      departureTime: "",
-      price: 0,
+      departureTime: new Date().toISOString().slice(0, 16), // Set to current time
+      price: 5, // Default price
     },
   });
 
@@ -188,8 +188,8 @@ export default function TicketBooking() {
                                 ) : routes?.length > 0 ? (
                                   routes.map((route: any) => (
                                     <SelectItem 
-                                      key={route.id} 
-                                      value={route.id.toString()}
+                                      key={route._id || route.id} 
+                                      value={(route._id || route.id).toString()}
                                     >
                                       {route.name}
                                     </SelectItem>
@@ -231,8 +231,8 @@ export default function TicketBooking() {
                                   ) : routeDetails?.routeStops?.length > 0 ? (
                                     routeDetails.routeStops.map((routeStop: any) => (
                                       <SelectItem 
-                                        key={routeStop.stop.id} 
-                                        value={routeStop.stop.id.toString()}
+                                        key={routeStop.stop._id || routeStop.stop.id} 
+                                        value={(routeStop.stop._id || routeStop.stop.id).toString()}
                                       >
                                         {routeStop.stop.name}
                                       </SelectItem>
@@ -273,12 +273,12 @@ export default function TicketBooking() {
                                   ) : routeDetails?.routeStops?.length > 0 ? (
                                     routeDetails.routeStops
                                       .filter((routeStop: any) => 
-                                        routeStop.stop.id.toString() !== form.watch("fromStopId")
+                                        (routeStop.stop._id || routeStop.stop.id).toString() !== form.watch("fromStopId")
                                       )
                                       .map((routeStop: any) => (
                                         <SelectItem 
-                                          key={routeStop.stop.id} 
-                                          value={routeStop.stop.id.toString()}
+                                          key={routeStop.stop._id || routeStop.stop.id} 
+                                          value={(routeStop.stop._id || routeStop.stop.id).toString()}
                                         >
                                           {routeStop.stop.name}
                                         </SelectItem>
@@ -424,7 +424,7 @@ export default function TicketBooking() {
               ) : tickets?.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {tickets.map((ticket: any) => (
-                    <Card key={ticket.id} className={ticket.status === 'active' ? 'border-green-400' : 'border-gray-200'}>
+                    <Card key={ticket._id || ticket.id} className={ticket.status === 'active' ? 'border-green-400' : 'border-gray-200'}>
                       <CardHeader className="pb-2">
                         <div className="flex justify-between items-start">
                           <CardTitle className="text-lg">{ticket.route?.name || 'Unknown Route'}</CardTitle>
@@ -436,7 +436,7 @@ export default function TicketBooking() {
                           </div>
                         </div>
                         <CardDescription>
-                          Ticket #{ticket.id}
+                          Ticket #{ticket._id || ticket.id}
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
