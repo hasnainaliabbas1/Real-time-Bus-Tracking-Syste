@@ -1,92 +1,326 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Base CSS Variables */
+:root {
+  --background-color: #f9f9f9;
+  --foreground-color: #0d0f16;
+  
+  --card-bg-color: #ffffff;
+  --card-text-color: #0d0f16;
+  
+  --popover-bg-color: #ffffff;
+  --popover-text-color: #0d0f16;
+  
+  --primary-color: #3b82f6;
+  --primary-text-color: #f5f5f7;
+  
+  --secondary-color: #10b981;
+  --secondary-text-color: #1e293b;
+  
+  --accent-color: #f59e0b;
+  --accent-text-color: #1e293b;
+  
+  --muted-color: #f1f5f9;
+  --muted-text-color: #64748b;
+  
+  --destructive-color: #ef4444;
+  --destructive-text-color: #f5f5f7;
+  
+  --border-color: #e2e8f0;
+  --input-color: #e2e8f0;
+  --ring-color: #3b82f6;
+  
+  --radius: 0.5rem;
+  
+  --chart-1-color: #3b82f6;
+  --chart-2-color: #10b981;
+  --chart-3-color: #f59e0b;
+  --chart-4-color: #8b5cf6;
+  --chart-5-color: #ec4899;
+  
+  --sidebar-bg-color: #0d0f16;
+  --sidebar-text-color: #f5f5f7;
+  --sidebar-primary-color: #3b82f6;
+  --sidebar-primary-text-color: #f9f9f9;
+  --sidebar-accent-color: #10b981;
+  --sidebar-accent-text-color: #f9f9f9;
+  --sidebar-border-color: #1e293b;
+  --sidebar-ring-color: #3b82f6;
+}
 
-@layer base {
-  :root {
-    --background: 0 0% 98%;
-    --foreground: 222.2 84% 4.9%;
+/* Dark Mode Variables */
+.dark {
+  --background-color: #0d0f16;
+  --foreground-color: #f5f5f7;
+  
+  --card-bg-color: #0d0f16;
+  --card-text-color: #f5f5f7;
+  
+  --popover-bg-color: #0d0f16;
+  --popover-text-color: #f5f5f7;
+  
+  --primary-color: #60a5fa;
+  --primary-text-color: #1e293b;
+  
+  --secondary-color: #5eead4;
+  --secondary-text-color: #f5f5f7;
+  
+  --accent-color: #f59e0b;
+  --accent-text-color: #f5f5f7;
+  
+  --muted-color: #1e293b;
+  --muted-text-color: #94a3b8;
+  
+  --destructive-color: #7f1d1d;
+  --destructive-text-color: #f5f5f7;
+  
+  --border-color: #1e293b;
+  --input-color: #1e293b;
+  --ring-color: #4e77c6;
+}
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+/* Basic Reset and Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border-color: var(--border-color);
+}
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+html, body {
+  height: 100%;
+}
 
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--background-color);
+  color: var(--foreground-color);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
 
-    --secondary: 160 84% 39%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+/* Common Utility Classes */
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
 
-    --accent: 35.5 91.7% 51.4%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+.flex {
+  display: flex;
+}
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+.flex-col {
+  flex-direction: column;
+}
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+.items-center {
+  align-items: center;
+}
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+.justify-center {
+  justify-content: center;
+}
 
-    --radius: 0.5rem;
+.justify-between {
+  justify-content: space-between;
+}
 
-    --chart-1: 221.2 83.2% 53.3%;
-    --chart-2: 160 84% 39%;
-    --chart-3: 35.5 91.7% 51.4%;
-    --chart-4: 262 83.3% 57.8%;
-    --chart-5: 325 79.3% 66.3%;
+.gap-2 {
+  gap: 0.5rem;
+}
 
-    --sidebar-background: 222.2 84% 4.9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 221.2 83.2% 53.3%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 160 84% 39%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 215 28% 17%;
-    --sidebar-ring: 221.2 83.2% 53.3%;
+.gap-4 {
+  gap: 1rem;
+}
+
+.p-4 {
+  padding: 1rem;
+}
+
+.py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.m-4 {
+  margin: 1rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.rounded {
+  border-radius: var(--radius);
+}
+
+.rounded-full {
+  border-radius: 9999px;
+}
+
+.border {
+  border: 1px solid var(--border-color);
+}
+
+.shadow {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.grid {
+  display: grid;
+}
+
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (min-width: 640px) {
+  .sm\\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 156.2 71.6% 66.9%;
-    --secondary-foreground: 210 40% 98%;
-
-    --accent: 35.5 91.7% 51.4%;
-    --accent-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+@media (min-width: 768px) {
+  .md\\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
 
-  * {
-    @apply border-border;
-  }
+/* Button Styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+  cursor: pointer;
+}
 
-  body {
-    @apply font-sans antialiased bg-background text-foreground;
-  }
+.btn-primary {
+  background-color: var(--primary-color);
+  color: var(--primary-text-color);
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background-color: var(--secondary-color);
+  color: var(--secondary-text-color);
+}
+
+.btn-secondary:hover {
+  opacity: 0.9;
+}
+
+.btn-outline {
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  color: var(--foreground-color);
+}
+
+.btn-outline:hover {
+  background-color: var(--muted-color);
+}
+
+/* Card Styles */
+.card {
+  background-color: var(--card-bg-color);
+  color: var(--card-text-color);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+}
+
+.card-body {
+  padding: 1rem;
+}
+
+.card-footer {
+  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--input-color);
+  border-radius: var(--radius);
+  background-color: var(--background-color);
+  color: var(--foreground-color);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--ring-color);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
 }
 
 /* Custom animations */
@@ -124,9 +358,18 @@
 
 .route-timeline-item:not(:last-child)::before {
   content: "";
-  @apply absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200;
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  margin-left: -1px;
+  height: 100%;
+  width: 2px;
+  background-color: #e2e8f0;
 }
 
 .map-container {
-  @apply absolute inset-0 w-full h-full;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
