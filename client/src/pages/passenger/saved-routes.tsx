@@ -59,7 +59,13 @@ export default function SavedRoutes() {
   // Save new route mutation
   const saveRouteMutation = useMutation({
     mutationFn: async (routeId: number) => {
-      const res = await apiRequest("POST", "/api/saved-routes", { routeId });
+      // Find route to get its name
+      const route = allRoutes?.find((r: any) => r.id === routeId || r._id === routeId);
+      
+      const res = await apiRequest("POST", "/api/saved-routes", { 
+        routeId, 
+        name: route?.name || "Saved Route"  // Add the required name field
+      });
       return res.json();
     },
     onSuccess: () => {
@@ -257,7 +263,7 @@ export default function SavedRoutes() {
                   <p className="text-sm font-medium text-gray-900 mb-2">Available Routes:</p>
                   {allRoutes.slice(0, 3).map((route: any) => (
                     <div 
-                      key={route.id} 
+                      key={route.id || route._id} 
                       className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
                     >
                       <span>{route.name}</span>

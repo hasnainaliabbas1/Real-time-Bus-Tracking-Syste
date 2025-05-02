@@ -1,0 +1,36 @@
+client:536  WebSocket connection to 'wss://ad45b10c-8450-4a1c-b042-c45fc18cebb6-00-1os68brvobqg7.worf.replit.dev/?token=y6cle7LJiDXf' failed: Error during WebSocket handshake: Unexpected response code: 400
+setupWebSocket @ client:536
+client:536  Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=y6cle7LJiDXf' is invalid.
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)
+react-dom.development.js:29895 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+websocket.ts:24 Connecting to WebSocket at: wss://ad45b10c-8450-4a1c-b042-c45fc18cebb6-00-1os68brvobqg7.worf.replit.dev/ws
+dashboard.tsx:34 Map would be initialized here with bus locations: Array(0)
+dashboard.tsx:34 Map would be initialized here with bus locations: Array(0)
+react-jsx-dev-runtime.development.js:87  Warning: Each child in a list should have a unique "key" prop.
+
+Check the render method of `SavedRoutes`. See https://reactjs.org/link/warning-keys for more information.
+    at div
+    at SavedRoutes (https://ad45b10c-8450-4a1c-b042-c45fc18cebb6-00-1os68brvobqg7.worf.replit.dev/src/pages/passenger/saved-routes.tsx:39:20)
+    at Route (https://ad45b10c-8450-4a1c-b042-c45fc18cebb6-00-1os68brvobqg7.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=10dc48a5:280:16)
+    at ProtectedRoute (https://ad45b10c-8450-4a1c-b042-c45fc18cebb6-00-1os68brvobqg7.worf.replit.dev/src/lib/protected-route.tsx:22:3)
+    at Switch (https://ad45b10c-8450-4a1c-b042-c45fc18cebb6-00-1os68brvobqg7.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=10dc48a5:336:17)
+    at Router
+    at AuthProvider (https://ad45b10c-8450-4a1c-b042-c45fc18cebb6-00-1os68brvobqg7.worf.replit.dev/src/hooks/use-auth.tsx:28:32)
+    at QueryClientProvider (https://ad45b10c-8450-4a1c-b042-c45fc18cebb6-00-1os68brvobqg7.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=10dc48a5:2879:3)
+    at App
+printWarning @ react-jsx-dev-runtime.development.js:87
+/api/saved-routes:1 
+            
+            
+            Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+/api/saved-routes:1 
+            
+            
+            Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+[NEW] Explain Console errors by using Copilot in Edge: click
+         
+         to explain an error. 
+        Learn more
+        Don't show again
