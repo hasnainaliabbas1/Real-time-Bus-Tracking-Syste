@@ -229,8 +229,8 @@ export default function BusManagement() {
       busNumber: "",
       capacity: 30,
       status: "inactive",
-      driverId: undefined,
-      routeId: undefined,
+      driverId: "",
+      routeId: "",
     },
   });
 
@@ -263,8 +263,10 @@ export default function BusManagement() {
       busNumber: bus.busNumber,
       capacity: bus.capacity,
       status: bus.status,
-      driverId: bus.driverId ? bus.driverId.toString() : undefined,
-      routeId: bus.routeId ? bus.routeId.toString() : undefined,
+      driverId: bus.driverId ? bus.driverId.toString() : 
+                bus.driver?._id ? bus.driver._id.toString() : "",
+      routeId: bus.routeId ? bus.routeId.toString() : 
+               bus.route?._id ? bus.route._id.toString() : "",
     });
   };
 
@@ -274,8 +276,8 @@ export default function BusManagement() {
       busNumber: "",
       capacity: 30,
       status: "inactive",
-      driverId: undefined,
-      routeId: undefined,
+      driverId: "",
+      routeId: "",
     });
   };
 
@@ -495,7 +497,7 @@ export default function BusManagement() {
                                         <Loader2 className="h-4 w-4 animate-spin" />
                                       </SelectItem>
                                     ) : drivers?.map((driver: any) => (
-                                      <SelectItem key={driver.id} value={driver.id.toString()}>
+                                      <SelectItem key={driver._id || driver.id} value={(driver._id || driver.id).toString()}>
                                         {driver.username} {driver.fullName ? `(${driver.fullName})` : ''}
                                       </SelectItem>
                                     ))}
@@ -527,7 +529,7 @@ export default function BusManagement() {
                                         <Loader2 className="h-4 w-4 animate-spin" />
                                       </SelectItem>
                                     ) : routesData?.map((route: any) => (
-                                      <SelectItem key={route.id} value={route.id.toString()}>
+                                      <SelectItem key={route._id || route.id} value={(route._id || route.id).toString()}>
                                         {route.name}
                                       </SelectItem>
                                     ))}
@@ -645,7 +647,7 @@ export default function BusManagement() {
                         </TableRow>
                       ) : (
                         filteredBuses?.map((bus: any) => (
-                          <TableRow key={bus.id}>
+                          <TableRow key={bus._id || bus.id}>
                             <TableCell className="font-medium">{bus.busNumber}</TableCell>
                             <TableCell>{bus.capacity}</TableCell>
                             <TableCell>
@@ -690,7 +692,7 @@ export default function BusManagement() {
                                     className="text-red-600" 
                                     onSelect={(e) => {
                                       e.preventDefault();
-                                      handleDeleteItem(bus.id, 'bus');
+                                      handleDeleteItem(bus._id || bus.id, 'bus');
                                     }}
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
@@ -736,7 +738,7 @@ export default function BusManagement() {
                         </TableRow>
                       ) : (
                         filteredRoutes?.map((route: any) => (
-                          <TableRow key={route.id}>
+                          <TableRow key={route._id || route.id}>
                             <TableCell className="font-medium">{route.name}</TableCell>
                             <TableCell>{route.description || <span className="text-gray-400">No description</span>}</TableCell>
                             <TableCell>
@@ -774,7 +776,7 @@ export default function BusManagement() {
                                     className="text-red-600" 
                                     onSelect={(e) => {
                                       e.preventDefault();
-                                      handleDeleteItem(route.id, 'route');
+                                      handleDeleteItem(route._id || route.id, 'route');
                                     }}
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
