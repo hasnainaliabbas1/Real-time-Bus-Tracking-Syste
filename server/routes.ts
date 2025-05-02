@@ -9,7 +9,8 @@ import {
   subscriptionPlans, subscriptions, incidents, savedRoutes,
   insertBusSchema, insertRouteSchema, insertStopSchema,
   insertTicketSchema, insertSubscriptionPlanSchema, 
-  insertSubscriptionSchema, insertIncidentSchema, insertSavedRouteSchema
+  insertSubscriptionSchema, insertIncidentSchema, insertSavedRouteSchema,
+  users
 } from "@shared/schema";
 import { eq, and, desc, or } from "drizzle-orm";
 import { nanoid } from "nanoid";
