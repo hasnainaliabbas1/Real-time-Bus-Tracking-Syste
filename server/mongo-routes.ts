@@ -82,7 +82,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               await driverBus.save();
               
               // Broadcast to passengers
-              for (const [, client] of connectedClients.entries()) {
+              Array.from(connectedClients.entries()).forEach(([_, client]) => {
                 if (client.role === 'passenger' && client.ws.readyState === WebSocket.OPEN) {
                   client.ws.send(JSON.stringify({
                     type: 'busLocationUpdate',
@@ -92,7 +92,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     }
                   }));
                 }
-              }
+              });
             }
           }
         }
