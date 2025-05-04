@@ -125,6 +125,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ===========================
+  // Development routes
+  // ===========================
+  app.post("/api/dev/seed", async (req, res) => {
+    try {
+      await seedInitialData();
+      res.json({ success: true, message: "Seed data created successfully" });
+    } catch (error) {
+      console.error("Error running seed data:", error);
+      res.status(500).json({ success: false, message: "Failed to create seed data" });
+    }
+  });
+
+  // ===========================
   // Users routes
   // ===========================
   app.get("/api/users", async (req, res) => {
