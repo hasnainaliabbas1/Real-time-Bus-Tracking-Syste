@@ -467,7 +467,7 @@ export default function TicketBooking() {
                     <Card key={ticket._id || ticket.id} className={ticket.status === 'active' ? 'border-green-400' : 'border-gray-200'}>
                       <CardHeader className="pb-2">
                         <div className="flex justify-between items-start">
-                          <CardTitle className="text-lg">{ticket.route?.name || 'Unknown Route'}</CardTitle>
+                          <CardTitle className="text-lg">{(ticket.route?.name || ticket.routeId?.name) || 'Unknown Route'}</CardTitle>
                           <div className={`px-2 py-1 rounded-full text-xs font-medium 
                             ${ticket.status === 'active' ? 'bg-green-100 text-green-800' : 
                               ticket.status === 'used' ? 'bg-gray-100 text-gray-600' : 
@@ -488,7 +488,7 @@ export default function TicketBooking() {
                             <div className="ml-3">
                               <p className="text-sm text-gray-500">Date</p>
                               <p className="text-sm font-medium">
-                                {ticket.departureTime ? format(new Date(ticket.departureTime), 'MMM d, yyyy') : 'Unknown'}
+                                {ticket.travelDate ? format(new Date(ticket.travelDate), 'MMM d, yyyy') : (ticket.departureTime ? format(new Date(ticket.departureTime), 'MMM d, yyyy') : 'Unknown')}
                               </p>
                             </div>
                           </div>
@@ -513,10 +513,10 @@ export default function TicketBooking() {
                             </div>
                             <div className="ml-3 space-y-2">
                               <div>
-                                <p className="text-sm font-medium">{ticket.fromStop?.name || 'Unknown'}</p>
+                                <p className="text-sm font-medium">{(ticket.fromStop?.name || ticket.fromStopId?.name) || 'Unknown'}</p>
                               </div>
                               <div>
-                                <p className="text-sm font-medium">{ticket.toStop?.name || 'Unknown'}</p>
+                                <p className="text-sm font-medium">{(ticket.toStop?.name || ticket.toStopId?.name) || 'Unknown'}</p>
                               </div>
                             </div>
                           </div>
@@ -602,7 +602,7 @@ export default function TicketBooking() {
               )}
             </div>
             <div className="text-center">
-              <h3 className="font-medium text-gray-900">{newTicket?.route?.name || "Unknown Route"}</h3>
+              <h3 className="font-medium text-gray-900">{(newTicket?.route?.name || newTicket?.routeId?.name) || "Unknown Route"}</h3>
               <p className="text-sm text-gray-500">
                 {newTicket?.fromStop?.name || "Unknown"} to {newTicket?.toStop?.name || "Unknown"}
               </p>
