@@ -109,13 +109,19 @@ export default function ScheduleManagement() {
   // Fetch buses
   const { data: buses, isLoading: isLoadingBuses } = useQuery({
     queryKey: ["/api/buses"],
-    select: (data) => data?.filter((bus: any) => bus.status === "active"),
+    select: (data) => {
+      console.log("Buses data:", data);
+      return data?.filter((bus: any) => bus.status === "active");
+    }
   });
 
   // Fetch routes
   const { data: routes, isLoading: isLoadingRoutes } = useQuery({
     queryKey: ["/api/routes"],
-    select: (data) => data?.filter((route: any) => route.status === "active"),
+    select: (data) => {
+      console.log("Routes data:", data);
+      return data?.filter((route: any) => route.status === "active");
+    }
   });
 
   // For demonstration purposes, we'll create some mock schedules
@@ -125,6 +131,7 @@ export default function ScheduleManagement() {
   useEffect(() => {
     // Mock data
     if (buses && routes) {
+      console.log("Creating mock schedules with buses and routes:", { buses, routes });
       const mockSchedules = [];
       
       for (let i = 0; i < 10; i++) {
@@ -132,17 +139,25 @@ export default function ScheduleManagement() {
         const route = routes[Math.floor(Math.random() * routes.length)];
         const hour = Math.floor(Math.random() * 12) + 8; // 8 AM to 8 PM
         
-        mockSchedules.push({
-          id: i + 1,
-          busId: bus?.id,
-          bus: bus,
-          routeId: route?.id,
-          route: route,
-          day: weekDates[Math.floor(Math.random() * 7)].day,
-          scheduledDeparture: `${hour}:${Math.floor(Math.random() * 6) * 10 || '00'}`,
-        });
+        // Make sure we have valid IDs from MongoDB
+        const busId = bus?._id || bus?.id;
+        const routeId = route?._id || route?.id;
+        
+        // Only create schedule if we have valid data
+        if (bus && route && busId && routeId) {
+          mockSchedules.push({
+            id: i + 1,
+            busId: busId,
+            bus: bus,
+            routeId: routeId,
+            route: route,
+            day: weekDates[Math.floor(Math.random() * 7)].day,
+            scheduledDeparture: `${hour}:${Math.floor(Math.random() * 6) * 10 || '00'}`,
+          });
+        }
       }
       
+      console.log("Created mock schedules:", mockSchedules);
       setSchedules(mockSchedules);
     }
   }, [buses, routes]);
@@ -342,11 +357,15 @@ export default function ScheduleManagement() {
                       <SelectItem value="loading" disabled>
                         <Loader2 className="h-4 w-4 animate-spin" />
                       </SelectItem>
-                    ) : routes?.map((route: any) => (
-                      <SelectItem key={route.id} value={route.id.toString()}>
-                        {route.name}
-                      </SelectItem>
-                    ))}
+                    ) : routes?.map((route: any) => {
+                      // Use _id for MongoDB, or fall back to id if needed
+                      const routeId = route._id || route.id;
+                      return (
+                        <SelectItem key={routeId} value={routeId && routeId.toString()}>
+                          {route.name}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </CardContent>
@@ -396,11 +415,15 @@ export default function ScheduleManagement() {
                                     <SelectItem value="loading" disabled>
                                       <Loader2 className="h-4 w-4 animate-spin" />
                                     </SelectItem>
-                                  ) : buses?.map((bus: any) => (
-                                    <SelectItem key={bus.id} value={bus.id.toString()}>
-                                      {bus.busNumber}
-                                    </SelectItem>
-                                  ))}
+                                  ) : buses?.map((bus: any) => {
+                                    // Use _id for MongoDB, or fall back to id if needed
+                                    const busId = bus._id || bus.id;
+                                    return (
+                                      <SelectItem key={busId} value={busId && busId.toString()}>
+                                        {bus.busNumber}
+                                      </SelectItem>
+                                    );
+                                  })}
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -427,11 +450,15 @@ export default function ScheduleManagement() {
                                     <SelectItem value="loading" disabled>
                                       <Loader2 className="h-4 w-4 animate-spin" />
                                     </SelectItem>
-                                  ) : routes?.map((route: any) => (
-                                    <SelectItem key={route.id} value={route.id.toString()}>
-                                      {route.name}
-                                    </SelectItem>
-                                  ))}
+                                  ) : routes?.map((route: any) => {
+                                    // Use _id for MongoDB, or fall back to id if needed
+                                    const routeId = route._id || route.id;
+                                    return (
+                                      <SelectItem key={routeId} value={routeId && routeId.toString()}>
+                                        {route.name}
+                                      </SelectItem>
+                                    );
+                                  })}
                                 </SelectContent>
                               </Select>
                               <FormMessage />
