@@ -97,7 +97,7 @@ const busFormSchema = z.object({
   routeId: z.string().optional(),
 });
 
-type BusFormValues = z.infer<typeof busFormSchema>;
+// Bus form values
 
 // Route form schema
 const routeFormSchema = z.object({
@@ -106,17 +106,17 @@ const routeFormSchema = z.object({
   status: z.enum(["active", "inactive"]),
 });
 
-type RouteFormValues = z.infer<typeof routeFormSchema>;
+// Route form values
 
 export default function BusManagement() {
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("buses");
   const [searchTerm, setSearchTerm] = useState("");
-  const [editingBus, setEditingBus] = useState<any>(null);
-  const [editingRoute, setEditingRoute] = useState<any>(null);
+  const [editingBus, setEditingBus] = useState(null);
+  const [editingRoute, setEditingRoute] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [deletingItem, setDeletingItem] = useState<{id: number | string, type: 'bus' | 'route'} | null>(null);
+  const [deletingItem, setDeletingItem] = useState(null);
 
   // Fetch buses data
   const { data: busesData, isLoading: isLoadingBuses } = useQuery({
@@ -131,12 +131,12 @@ export default function BusManagement() {
   // Fetch drivers
   const { data: drivers, isLoading: isLoadingDrivers } = useQuery({
     queryKey: ["/api/users"],
-    select: (data) => data?.filter((user: any) => user.role === "driver"),
+    select: (data) => data?.filter((user) => user.role === "driver"),
   });
 
   // Create/Update bus mutation
   const busFormMutation = useMutation({
-    mutationFn: async (values: BusFormValues) => {
+    mutationFn: async (values) => {
       // Make sure we're sending valid driver and route IDs to MongoDB
       const busData = {
         ...values,
@@ -173,7 +173,7 @@ export default function BusManagement() {
 
   // Create/Update route mutation
   const routeFormMutation = useMutation({
-    mutationFn: async (values: RouteFormValues) => {
+    mutationFn: async (values) => {
       let res;
       if (editingRoute) {
         res = await apiRequest("PUT", `/api/routes/${editingRoute._id || editingRoute.id}`, values);

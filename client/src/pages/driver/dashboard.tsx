@@ -32,7 +32,7 @@ export default function DriverDashboard() {
     select: (data) => {
       console.log("USER ID:", user?._id || user?.id);
       console.log("ALL BUSES:", data);
-      return data?.find((bus: any) => {
+      return data?.find((bus) => {
         // MongoDB stores the reference as driverId, and we need to match with user's _id
         const userId = user?._id || user?.id;
         // Check several possible field patterns due to MongoDB structure
@@ -119,7 +119,7 @@ export default function DriverDashboard() {
 
   // Update passenger count mutation
   const updatePassengerCountMutation = useMutation({
-    mutationFn: async (count: number) => {
+    mutationFn: async (count) => {
       // In a real implementation, this would update the passenger count in the database
       return { count };
     },
@@ -130,7 +130,7 @@ export default function DriverDashboard() {
         description: `Passenger count updated to ${data.count}`,
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         title: "Failed to update passenger count",
         description: error.message,
@@ -165,7 +165,7 @@ export default function DriverDashboard() {
         description: "Current stop updated successfully.",
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         title: "Failed to update stop",
         description: error.message,
@@ -182,7 +182,7 @@ export default function DriverDashboard() {
   }, [driverBus, isLoading]);
 
   // Prepare stops array for RouteTimeline component
-  const stops = driverRoute?.route?.routeStops?.map((routeStop: any, index: number) => ({
+  const stops = driverRoute?.route?.routeStops?.map((routeStop, index) => ({
     id: routeStop.stop.id,
     name: routeStop.stop.name,
     scheduledTime: routeStop.scheduledArrival,
@@ -205,7 +205,7 @@ export default function DriverDashboard() {
     markArrivedAtStopMutation.mutate();
   };
 
-  const handleUpdatePassengerCount = (increment: boolean) => {
+  const handleUpdatePassengerCount = (increment) => {
     const newCount = increment 
       ? passengerCount + 1 
       : Math.max(0, passengerCount - 1);
