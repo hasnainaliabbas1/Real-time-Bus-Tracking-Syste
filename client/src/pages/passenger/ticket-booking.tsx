@@ -50,7 +50,7 @@ const ticketFormDefaults = {
 export default function TicketBooking() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [selectedRoute, setSelectedRoute] = useState(null);
+  const [selectedRoute, setSelectedRoute] = useState("");
   const [showQRCode, setShowQRCode] = useState(false);
   const [newTicket, setNewTicket] = useState(null);
   const [currentTab, setCurrentTab] = useState("book");
@@ -84,7 +84,7 @@ export default function TicketBooking() {
 
   // Book ticket mutation
   const bookTicketMutation = useMutation({
-    mutationFn: async (ticketData: any) => {
+    mutationFn: async (ticketData) => {
       const res = await apiRequest("POST", "/api/tickets", ticketData);
       return res.json();
     },
@@ -97,7 +97,7 @@ export default function TicketBooking() {
         description: "Your ticket has been booked.",
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         title: "Failed to book ticket",
         description: error.message,
@@ -112,7 +112,7 @@ export default function TicketBooking() {
     defaultValues: ticketFormDefaults,
   });
 
-  const onRouteChange = (routeId: string) => {
+  const onRouteChange = (routeId) => {
     // Set the selected route directly as a string (MongoDB ID)
     setSelectedRoute(routeId);
     form.setValue("routeId", routeId);
@@ -123,7 +123,7 @@ export default function TicketBooking() {
     form.setValue("price", Math.floor(Math.random() * 10) + 5);
   };
 
-  const onSubmit = (data: TicketFormValues) => {
+  const onSubmit = (data) => {
     // Convert departureTime to a Date object, but keep IDs as strings for MongoDB
     const ticketData = {
       ...data,
@@ -199,7 +199,7 @@ export default function TicketBooking() {
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                   </div>
                                 ) : routes?.length > 0 ? (
-                                  routes.map((route: any) => (
+                                  routes.map((route) => (
                                     <SelectItem 
                                       key={route._id || route.id} 
                                       value={(route._id || route.id).toString()}
@@ -242,7 +242,7 @@ export default function TicketBooking() {
                                       <Loader2 className="h-4 w-4 animate-spin" />
                                     </div>
                                   ) : routeDetails?.routeStops?.length > 0 ? (
-                                    routeDetails.routeStops.map((routeStop: any) => (
+                                    routeDetails.routeStops.map((routeStop) => (
                                       <SelectItem 
                                         key={routeStop.stop._id || routeStop.stop.id} 
                                         value={(routeStop.stop._id || routeStop.stop.id).toString()}
@@ -285,10 +285,10 @@ export default function TicketBooking() {
                                     </div>
                                   ) : routeDetails?.routeStops?.length > 0 ? (
                                     routeDetails.routeStops
-                                      .filter((routeStop: any) => 
+                                      .filter((routeStop) => 
                                         (routeStop.stop._id || routeStop.stop.id).toString() !== form.watch("fromStopId")
                                       )
-                                      .map((routeStop: any) => (
+                                      .map((routeStop) => (
                                         <SelectItem 
                                           key={routeStop.stop._id || routeStop.stop.id} 
                                           value={(routeStop.stop._id || routeStop.stop.id).toString()}
@@ -436,7 +436,7 @@ export default function TicketBooking() {
                 </div>
               ) : tickets?.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {tickets.map((ticket: any) => (
+                  {tickets.map((ticket) => (
                     <Card key={ticket._id || ticket.id} className={ticket.status === 'active' ? 'border-green-400' : 'border-gray-200'}>
                       <CardHeader className="pb-2">
                         <div className="flex justify-between items-start">
