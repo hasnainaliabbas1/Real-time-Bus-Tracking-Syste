@@ -18,7 +18,7 @@ export default function DriverDashboard() {
   const { toast } = useToast();
   const { isConnected, sendMessage } = useWebSocket();
   const driverRoute = useDriverRouteUpdates();
-  const [shiftStatus, setShiftStatus] = useState<'offline' | 'active'>('offline');
+  const [shiftStatus, setShiftStatus] = useState('offline');
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
   const [passengerCount, setPassengerCount] = useState(0);
   const [isReportingDelay, setIsReportingDelay] = useState(false);
@@ -46,7 +46,7 @@ export default function DriverDashboard() {
 
   // Start/End shift mutation
   const updateBusStatusMutation = useMutation({
-    mutationFn: async (status: 'active' | 'inactive') => {
+    mutationFn: async (status) => {
       if (!driverBus) return;
       
       // Get the bus ID, supporting both MongoDB _id and SQL id
@@ -74,7 +74,7 @@ export default function DriverDashboard() {
         });
       }
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         title: "Status update failed",
         description: error.message,
@@ -107,7 +107,7 @@ export default function DriverDashboard() {
       });
       setIsReportingDelay(false);
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         title: "Failed to report delay",
         description: error.message,

@@ -38,6 +38,8 @@ const ticketFormSchema = z.object({
   price: z.number().min(1, "Price is required"),
 });
 
+// JavaScript version - no TypeScript interfaces or type definitions needed
+
 // Define the form values structure
 const ticketFormDefaults = {
   routeId: "",
