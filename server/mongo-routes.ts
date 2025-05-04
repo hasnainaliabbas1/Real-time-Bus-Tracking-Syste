@@ -317,9 +317,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .populate('stopId')
             .sort('order');
             
+          // Format route stops for frontend consumption
+          const formattedRouteStops = routeStops.map(rs => {
+            const stopData = rs.stopId;
+            return {
+              order: rs.order,
+              scheduledArrival: rs.scheduledArrival,
+              scheduledDeparture: rs.scheduledDeparture,
+              stop: {
+                _id: stopData._id,
+                id: stopData._id, // Include both _id and id for compatibility
+                name: stopData.name,
+                location: stopData.location
+              }
+            };
+          });
+            
           return {
             ...routeObj,
-            routeStops: convertToPlainObject(routeStops)
+            routeStops: formattedRouteStops
           };
         })
       );
@@ -348,9 +364,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Find buses on this route
       const buses = await Bus.find({ routeId: id });
       
+      // Format route stops for frontend consumption
+      const formattedRouteStops = routeStops.map(rs => {
+        const stopData = rs.stopId;
+        return {
+          order: rs.order,
+          scheduledArrival: rs.scheduledArrival,
+          scheduledDeparture: rs.scheduledDeparture,
+          stop: {
+            _id: stopData._id,
+            id: stopData._id, // Include both _id and id for compatibility
+            name: stopData.name,
+            location: stopData.location
+          }
+        };
+      });
+      
       const routeData = {
         ...convertToPlainObject(route),
-        routeStops: convertToPlainObject(routeStops),
+        routeStops: formattedRouteStops,
         buses: convertToPlainObject(buses)
       };
       
