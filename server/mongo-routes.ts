@@ -838,14 +838,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create additional stops for each route
         const routeId = route._id;
         
-        // Create stops with more realistic names
+        // Create stops with more realistic names - expanded to 12 stops
         const stopNames = [
           "Main Bus Terminal",
           "Downtown Center",
           "University Campus",
           "Shopping Mall",
           "Hospital",
-          "Train Station"
+          "Train Station",
+          "City Park",
+          "Business District",
+          "Residential Area",
+          "Sports Stadium",
+          "Convention Center",
+          "Airport"
         ];
         
         // Generate random coordinates around a center point
@@ -1064,14 +1070,20 @@ export async function seedInitialData() {
     for (const route of routes) {
       console.log(`Processing route: ${route.name}...`);
       
-      // Standard stop names with clear meaning
+      // Standard stop names with clear meaning - expanded to 12 stops
       const stopNames = [
         "Main Bus Terminal",
         "Downtown Center",
         "University Campus",
         "Shopping Mall",
         "Hospital",
-        "Train Station"
+        "Train Station",
+        "City Park",
+        "Business District",
+        "Residential Area",
+        "Sports Stadium",
+        "Convention Center",
+        "Airport"
       ];
       
       // Base coordinates (will be slightly varied for each stop)
