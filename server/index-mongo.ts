@@ -27,11 +27,13 @@ async function start() {
     // Setup authentication with the initialized storage
     setupAuth(app);
     
+    // Seed initial data including RouteStop connections FIRST
+    console.log('Starting data seeding process...');
+    await seedInitialData();
+    console.log('Data seeding completed');
+    
     // Register routes
     const server = await registerRoutes(app);
-    
-    // Seed initial data including RouteStop connections
-    await seedInitialData();
     
     // Setup Vite for development
     await setupVite(app, server);

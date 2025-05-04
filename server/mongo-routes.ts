@@ -1030,110 +1030,114 @@ export async function seedInitialData() {
       await passengerUser.save();
       console.log('Passenger user created');
     }
+    
+    console.log('Creating stops and route connections...');
+    
+    // Check if we have any routes
+    const routesCount = await Route.countDocuments();
+    
+    // If no routes, create at least one
+    if (routesCount === 0) {
+      const defaultRoute = new Route({
+        name: 'City Center Express',
+        description: 'Main city route covering major landmarks',
+        status: 'active'
+      });
+      await defaultRoute.save();
+      console.log('Created default route: City Center Express');
+    }
+    
+    // Get all routes for processing
+    const routes = await Route.find({});
+    console.log(`Found ${routes.length} routes to process`);
+    
+    // Clear existing RouteStop connections if they're invalid 
+    // (helps with fixing problematic stops)
+    const existingStops = await Stop.find({});
+    if (existingStops.length < 3) {
+      // If we have very few stops, it might be a database issue, clear and recreate
+      console.log('Not enough stops found. Clearing existing RouteStop connections...');
+      await RouteStop.deleteMany({});
+    }
 
-    // Create RouteStop connections for existing routes
-    const routeStopsCount = await RouteStop.countDocuments();
-    if (routeStopsCount === 0) {
-      const routes = await Route.find({});
+    // Create standardized stops for all routes
+    for (const route of routes) {
+      console.log(`Processing route: ${route.name}...`);
       
-      for (const route of routes) {
-        console.log(`Creating RouteStop connections for route: ${route.name}`);
+      // Standard stop names with clear meaning
+      const stopNames = [
+        "Main Bus Terminal",
+        "Downtown Center",
+        "University Campus",
+        "Shopping Mall",
+        "Hospital",
+        "Train Station"
+      ];
+      
+      // Base coordinates (will be slightly varied for each stop)
+      const centerLat = 34.0522;
+      const centerLng = -118.2437;
+      
+      // Create or find stops and connect them to this route
+      for (let i = 0; i < stopNames.length; i++) {
+        const stopName = stopNames[i];
         
-        // Get the stops from the route data
-        const routeStopsData = route.stops || [];
+        // Add slight variation to coordinates to make them unique
+        const lat = centerLat + (Math.random() - 0.5) * 0.1;
+        const lng = centerLng + (Math.random() - 0.5) * 0.1;
         
-        if (routeStopsData.length > 0) {
-          // For each stop in the route
-          for (let i = 0; i < routeStopsData.length; i++) {
-            const stopData = routeStopsData[i];
-            
-            // Check if stop exists already
-            let stop = await Stop.findOne({ name: stopData.name });
-            
-            // If stop doesn't exist, create it
-            if (!stop) {
-              stop = new Stop({
-                name: stopData.name,
-                location: {
-                  lat: stopData.location?.coordinates?.[1] || 0,
-                  lng: stopData.location?.coordinates?.[0] || 0
-                },
-                description: `Stop for ${route.name}`
-              });
-              await stop.save();
-              console.log(`Created stop: ${stop.name}`);
-            }
-            
-            // Create RouteStop connection
-            const routeStop = new RouteStop({
-              routeId: route._id,
-              stopId: stop._id,
-              order: i,
-              scheduledArrival: stopData.arrivalTime || "",
-              scheduledDeparture: stopData.departureTime || ""
-            });
-            
-            await routeStop.save();
-            console.log(`Created RouteStop connection for stop: ${stop.name} on route: ${route.name}`);
-          }
+        // Try to find existing stop first
+        let stop = await Stop.findOne({ name: stopName });
+        
+        // If stop doesn't exist, create it
+        if (!stop) {
+          stop = new Stop({
+            name: stopName,
+            location: { lat, lng },
+            description: `${stopName} for ${route.name}`
+          });
+          await stop.save();
+          console.log(`Created new stop: ${stopName}`);
+        }
+        
+        // Check if stop is already connected to this route
+        const existingConnection = await RouteStop.findOne({
+          routeId: route._id,
+          stopId: stop._id
+        });
+        
+        // If not connected, create the connection
+        if (!existingConnection) {
+          const hour = 7 + i;
+          const minute = i * 10;
+          
+          const routeStop = new RouteStop({
+            routeId: route._id,
+            stopId: stop._id,
+            order: i,
+            scheduledArrival: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
+            scheduledDeparture: `${hour.toString().padStart(2, '0')}:${(minute + 5).toString().padStart(2, '0')}`
+          });
+          
+          await routeStop.save();
+          console.log(`Connected ${stopName} to route: ${route.name}`);
         } else {
-          // If no embedded stops, create some default stops
-          console.log(`No embedded stops found for route: ${route.name}, creating default stops`);
-          
-          // Create first stop
-          let stop1 = await Stop.findOne({ name: `${route.name} Start` });
-          if (!stop1) {
-            stop1 = new Stop({
-              name: `${route.name} Start`,
-              location: {
-                lat: 37.7749,
-                lng: -122.4194
-              },
-              description: `Starting point for ${route.name}`
-            });
-            await stop1.save();
-          }
-          
-          // Create second stop
-          let stop2 = await Stop.findOne({ name: `${route.name} End` });
-          if (!stop2) {
-            stop2 = new Stop({
-              name: `${route.name} End`,
-              location: {
-                lat: 37.7894,
-                lng: -122.4016
-              },
-              description: `End point for ${route.name}`
-            });
-            await stop2.save();
-          }
-          
-          // Create RouteStop connections
-          const routeStop1 = new RouteStop({
-            routeId: route._id,
-            stopId: stop1._id,
-            order: 0,
-            scheduledArrival: "08:00",
-            scheduledDeparture: "08:10"
-          });
-          
-          const routeStop2 = new RouteStop({
-            routeId: route._id,
-            stopId: stop2._id,
-            order: 1,
-            scheduledArrival: "08:45",
-            scheduledDeparture: "09:00"
-          });
-          
-          await routeStop1.save();
-          await routeStop2.save();
-          
-          console.log(`Created default RouteStop connections for route: ${route.name}`);
+          console.log(`Stop ${stopName} already connected to route: ${route.name}`);
         }
       }
-      console.log("RouteStop connections created");
     }
+    
+    console.log('Completed creating stops and route connections');
+    
+    // Verify route connections worked
+    const finalStopCount = await Stop.countDocuments();
+    const finalConnectionCount = await RouteStop.countDocuments();
+    
+    console.log(`Verification - Stops: ${finalStopCount}, RouteStop connections: ${finalConnectionCount}`);
+    
+    return true;
   } catch (error) {
     console.error('Error seeding initial data:', error);
+    return false;
   }
 }
