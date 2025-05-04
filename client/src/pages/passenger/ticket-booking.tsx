@@ -604,10 +604,10 @@ export default function TicketBooking() {
             <div className="text-center">
               <h3 className="font-medium text-gray-900">{(newTicket?.route?.name || newTicket?.routeId?.name) || "Unknown Route"}</h3>
               <p className="text-sm text-gray-500">
-                {newTicket?.fromStop?.name || "Unknown"} to {newTicket?.toStop?.name || "Unknown"}
+                {(newTicket?.fromStop?.name || newTicket?.fromStopId?.name) || "Unknown"} to {(newTicket?.toStop?.name || newTicket?.toStopId?.name) || "Unknown"}
               </p>
               <p className="text-sm text-gray-500 mt-1">
-                {newTicket?.departureTime ? format(new Date(newTicket.departureTime), 'MMM d, yyyy - h:mm a') : "Unknown date"}
+                {newTicket?.travelDate ? format(new Date(newTicket.travelDate), 'MMM d, yyyy') : (newTicket?.departureTime ? format(new Date(newTicket.departureTime), 'MMM d, yyyy') : "Unknown date")} - {newTicket?.departureTime ? format(new Date(newTicket.departureTime), 'h:mm a') : "Unknown time"}
               </p>
             </div>
           </div>
