@@ -36,6 +36,8 @@ const ticketFormSchema = z.object({
   toStopId: z.string().min(1, "Arrival stop is required"),
   departureTime: z.string().min(1, "Departure time is required"),
   price: z.number().min(1, "Price is required"),
+  // Add travel date field
+  travelDate: z.string().min(1, "Travel date is required"),
 });
 
 // JavaScript version - no TypeScript interfaces or type definitions needed
@@ -46,6 +48,7 @@ const ticketFormDefaults = {
   fromStopId: "",
   toStopId: "",
   departureTime: new Date().toISOString().slice(0, 16),
+  travelDate: new Date().toISOString().slice(0, 10), // YYYY-MM-DD format
   price: 5,
 };
 
@@ -126,13 +129,14 @@ export default function TicketBooking() {
   };
 
   const onSubmit = (data) => {
-    // Convert departureTime to a Date object, but keep IDs as strings for MongoDB
+    // Convert departureTime and travelDate to Date objects, but keep IDs as strings for MongoDB
     const ticketData = {
       ...data,
       routeId: data.routeId, // Keep as string for MongoDB ID
       fromStopId: data.fromStopId, // Keep as string for MongoDB ID
       toStopId: data.toStopId, // Keep as string for MongoDB ID
       departureTime: new Date(data.departureTime),
+      travelDate: new Date(data.travelDate), // Add travel date
       status: "active",
     };
 
@@ -311,24 +315,45 @@ export default function TicketBooking() {
                         />
                       </div>
 
-                      <FormField
-                        control={form.control}
-                        name="departureTime"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Departure Time</FormLabel>
-                            <FormControl>
-                              <input
-                                type="datetime-local"
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                {...field}
-                                disabled={!selectedRoute || !form.watch("fromStopId") || !form.watch("toStopId")}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="travelDate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Travel Date</FormLabel>
+                              <FormControl>
+                                <input
+                                  type="date"
+                                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                  {...field}
+                                  disabled={!selectedRoute || !form.watch("fromStopId") || !form.watch("toStopId")}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      
+                        <FormField
+                          control={form.control}
+                          name="departureTime"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Departure Time</FormLabel>
+                              <FormControl>
+                                <input
+                                  type="datetime-local"
+                                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                  {...field}
+                                  disabled={!selectedRoute || !form.watch("fromStopId") || !form.watch("toStopId")}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
                       <FormField
                         control={form.control}
