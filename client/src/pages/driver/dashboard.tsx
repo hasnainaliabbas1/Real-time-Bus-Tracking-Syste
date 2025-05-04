@@ -29,7 +29,19 @@ export default function DriverDashboard() {
   // Fetch driver's bus
   const { data: driverBus, isLoading } = useQuery({
     queryKey: ["/api/buses"],
-    select: (data) => data?.find((bus: any) => bus.driverId === user?.id),
+    select: (data) => {
+      console.log("USER ID:", user?._id || user?.id);
+      console.log("ALL BUSES:", data);
+      return data?.find((bus: any) => {
+        // MongoDB stores the reference as driverId, and we need to match with user's _id
+        const userId = user?._id || user?.id;
+        // Check several possible field patterns due to MongoDB structure
+        return (
+          (bus.driverId && bus.driverId.toString() === userId?.toString()) || 
+          (bus.driver && (bus.driver._id?.toString() === userId?.toString() || bus.driver.id?.toString() === userId?.toString()))
+        );
+      });
+    }
   });
 
   // Start/End shift mutation
@@ -37,7 +49,10 @@ export default function DriverDashboard() {
     mutationFn: async (status: 'active' | 'inactive') => {
       if (!driverBus) return;
       
-      const res = await apiRequest("PUT", `/api/buses/${driverBus.id}`, {
+      // Get the bus ID, supporting both MongoDB _id and SQL id
+      const busId = driverBus._id || driverBus.id;
+      
+      const res = await apiRequest("PUT", `/api/buses/${busId}`, {
         ...driverBus,
         status,
       });
@@ -73,8 +88,11 @@ export default function DriverDashboard() {
     mutationFn: async () => {
       if (!driverBus) return;
       
+      // Use the appropriate ID field for MongoDB
+      const busId = driverBus._id || driverBus.id;
+      
       const res = await apiRequest("POST", "/api/incidents", {
-        busId: driverBus.id,
+        busId: busId,
         incidentType: "delay",
         description: "Bus delayed due to traffic",
         location: driverBus.currentLocation,
@@ -132,9 +150,12 @@ export default function DriverDashboard() {
       
       // Send a WebSocket message to notify passengers
       if (isConnected && driverBus) {
+        // Use the appropriate ID field for MongoDB
+        const busId = driverBus._id || driverBus.id;
+        
         sendMessage({
           type: "stopUpdate",
-          busId: driverBus.id,
+          busId: busId,
           currentStop: data.currentStopIndex,
         });
       }
