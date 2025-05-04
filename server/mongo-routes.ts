@@ -938,7 +938,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         Ticket.countDocuments({ status: 'active' })
       ]);
       
-      // Generate passenger counts for last 7 days
+      // Get passenger counts for last 7 days from ticket data
       const today = new Date();
       const passengerCounts = [];
       
@@ -950,8 +950,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const nextDate = new Date(date);
         nextDate.setDate(date.getDate() + 1);
         
-        // Random count for demonstration (in a real app, this would query ticket data)
-        const count = Math.floor(Math.random() * 150) + 50;
+        // Query actual ticket count for this day
+        const count = await Ticket.countDocuments({
+          createdAt: { $gte: date, $lt: nextDate }
+        });
         
         passengerCounts.push({
           date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -959,18 +961,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // On-time performance (simulated)
+      // Get on-time performance from incident data
+      const lastWeek = new Date();
+      lastWeek.setDate(lastWeek.getDate() - 7);
+      
+      const totalIncidents = await Incident.countDocuments({
+        createdAt: { $gte: lastWeek }
+      });
+      
+      const delayIncidents = await Incident.countDocuments({
+        createdAt: { $gte: lastWeek },
+        incidentType: 'delay'
+      });
+      
+      // Total active bus routes
+      const totalBusRoutes = await Route.countDocuments({ status: 'active' });
+      
+      // Calculate percentage (avoid division by zero)
+      const potentialTrips = totalBusRoutes * 7; // 7 days of service
+      const delayedPercentage = potentialTrips > 0 ? Math.min(100, Math.round((delayIncidents / potentialTrips) * 100)) : 0;
+      const onTimePercentage = 100 - delayedPercentage;
+      
       const onTimePerformance = {
-        onTime: 85,
-        delayed: 15
+        onTime: onTimePercentage,
+        delayed: delayedPercentage
       };
       
-      // Subscription trends (simulated)
-      const subscriptionTrends = [
-        { name: 'Daily Pass', count: 120 },
-        { name: 'Weekly Pass', count: 75 },
-        { name: 'Monthly Pass', count: 45 }
-      ];
+      // Get subscription trends from actual subscription data
+      const subscriptionPlans = await SubscriptionPlan.find({});
+      const subscriptionTrends = [];
+      
+      for (const plan of subscriptionPlans) {
+        const count = await Subscription.countDocuments({
+          planId: plan._id,
+          status: 'active'
+        });
+        
+        subscriptionTrends.push({
+          name: plan.name,
+          count
+        });
+      }
+      
+      // If no subscription plans exist yet, provide empty array
+      if (subscriptionTrends.length === 0) {
+        // Get count of tickets by travel date - group them as another metric
+        const today = new Date();
+        const dailyTickets = await Ticket.countDocuments({
+          travelDate: { 
+            $gte: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+            $lt: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)
+          }
+        });
+        
+        // Add alternative data if no subscriptions
+        subscriptionTrends.push(
+          { name: 'Single Tickets', count: dailyTickets || 0 }
+        );
+      }
       
       const analyticsData = {
         counts: {
