@@ -30,6 +30,9 @@ async function start() {
     // Register routes
     const server = await registerRoutes(app);
     
+    // Seed initial data including RouteStop connections
+    await seedInitialData();
+    
     // Setup Vite for development
     await setupVite(app, server);
     

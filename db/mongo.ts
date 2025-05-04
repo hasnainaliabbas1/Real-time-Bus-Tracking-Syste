@@ -65,6 +65,15 @@ const routeSchema = new Schema({
     enum: ['active', 'inactive', 'temporary'],
     default: 'active'
   },
+  stops: [{
+    name: { type: String, required: true },
+    location: {
+      type: { type: String, default: 'Point' },
+      coordinates: [Number]
+    },
+    arrivalTime: { type: String },
+    departureTime: { type: String },
+  }],
   createdAt: { type: Date, default: Date.now }
 });
 
