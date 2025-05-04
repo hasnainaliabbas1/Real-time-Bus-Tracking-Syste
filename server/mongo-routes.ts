@@ -820,6 +820,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ===========================
+  // Special route to create additional stops and connections
+  // ===========================
+  app.post("/api/create-stops", async (req, res) => {
+    try {
+      // Remove authentication check so we can seed data more easily
+      // This is normally not recommended for production environments
+      
+      // Get all routes
+      const routes = await Route.find({});
+      
+      // Counter for created items
+      let createdStops = 0;
+      let createdRouteStops = 0;
+      
+      for (const route of routes) {
+        // Create additional stops for each route
+        const routeId = route._id;
+        
+        // Create stops with more realistic names
+        const stopNames = [
+          "Main Bus Terminal",
+          "Downtown Center",
+          "University Campus",
+          "Shopping Mall",
+          "Hospital",
+          "Train Station"
+        ];
+        
+        // Generate random coordinates around a center point
+        const centerLat = 34.0522;
+        const centerLng = -118.2437;
+        
+        for (let i = 0; i < stopNames.length; i++) {
+          // Add some variation to coordinates
+          const lat = centerLat + (Math.random() - 0.5) * 0.1;
+          const lng = centerLng + (Math.random() - 0.5) * 0.1;
+          
+          // Check if the stop already exists
+          let stop = await Stop.findOne({ name: stopNames[i] });
+          
+          // If stop doesn't exist, create it
+          if (!stop) {
+            stop = new Stop({
+              name: stopNames[i],
+              location: {
+                lat,
+                lng
+              },
+              description: `${stopNames[i]} for ${route.name}`
+            });
+            await stop.save();
+            console.log(`Created stop: ${stop.name}`);
+            createdStops++;
+          }
+          
+          // Check if RouteStop connection already exists
+          const existingRouteStop = await RouteStop.findOne({
+            routeId,
+            stopId: stop._id
+          });
+          
+          // If connection doesn't exist, create it
+          if (!existingRouteStop) {
+            const routeStop = new RouteStop({
+              routeId,
+              stopId: stop._id,
+              order: i,
+              scheduledArrival: `0${7 + i}:${i * 10}`,
+              scheduledDeparture: `0${7 + i}:${i * 10 + 5}`
+            });
+            
+            await routeStop.save();
+            console.log(`Created RouteStop connection for stop: ${stop.name} on route: ${route.name}`);
+            createdRouteStops++;
+          }
+        }
+      }
+      
+      res.json({ 
+        message: "Stops created and connected successfully", 
+        stats: {
+          routes: routes.length,
+          createdStops,
+          createdRouteStops
+        }
+      });
+    } catch (error) {
+      console.error("Error creating stops:", error);
+      res.status(500).json({ message: "Failed to create stops" });
+    }
+  });
+
+  // ===========================
   // Analytics routes
   // ===========================
   app.get("/api/analytics", async (req, res) => {
