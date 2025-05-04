@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -38,15 +38,22 @@ const ticketFormSchema = z.object({
   price: z.number().min(1, "Price is required"),
 });
 
-type TicketFormValues = z.infer<typeof ticketFormSchema>;
+// Define the form values structure
+const ticketFormDefaults = {
+  routeId: "",
+  fromStopId: "",
+  toStopId: "",
+  departureTime: new Date().toISOString().slice(0, 16),
+  price: 5,
+};
 
 export default function TicketBooking() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+  const [selectedRoute, setSelectedRoute] = useState(null);
   const [showQRCode, setShowQRCode] = useState(false);
-  const [newTicket, setNewTicket] = useState<any>(null);
-  const [currentTab, setCurrentTab] = useState<string>("book");
+  const [newTicket, setNewTicket] = useState(null);
+  const [currentTab, setCurrentTab] = useState("book");
 
   // Fetch routes
   const { data: routes, isLoading: isLoadingRoutes } = useQuery({
@@ -68,7 +75,7 @@ export default function TicketBooking() {
   });
   
   // Log route data for debugging
-  React.useEffect(() => {
+  useEffect(() => {
     if (routeDetails) {
       console.log("Route details loaded:", routeDetails);
       console.log("Route stops:", routeDetails.routeStops);
@@ -100,15 +107,9 @@ export default function TicketBooking() {
   });
 
   // Initialize form with non-empty strings for select fields
-  const form = useForm<TicketFormValues>({
+  const form = useForm({
     resolver: zodResolver(ticketFormSchema),
-    defaultValues: {
-      routeId: "",
-      fromStopId: "",
-      toStopId: "",
-      departureTime: new Date().toISOString().slice(0, 16), // Set to current time
-      price: 5, // Default price
-    },
+    defaultValues: ticketFormDefaults,
   });
 
   const onRouteChange = (routeId: string) => {
