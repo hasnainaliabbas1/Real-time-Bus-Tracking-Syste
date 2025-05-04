@@ -43,7 +43,7 @@ type TicketFormValues = z.infer<typeof ticketFormSchema>;
 export default function TicketBooking() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [selectedRoute, setSelectedRoute] = useState<number | null>(null);
+  const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [showQRCode, setShowQRCode] = useState(false);
   const [newTicket, setNewTicket] = useState<any>(null);
   const [currentTab, setCurrentTab] = useState<string>("book");
@@ -101,7 +101,8 @@ export default function TicketBooking() {
   });
 
   const onRouteChange = (routeId: string) => {
-    setSelectedRoute(parseInt(routeId));
+    // Set the selected route directly as a string (MongoDB ID)
+    setSelectedRoute(routeId);
     form.setValue("routeId", routeId);
     form.setValue("fromStopId", "");
     form.setValue("toStopId", "");
@@ -111,12 +112,12 @@ export default function TicketBooking() {
   };
 
   const onSubmit = (data: TicketFormValues) => {
-    // Convert departureTime to a Date object
+    // Convert departureTime to a Date object, but keep IDs as strings for MongoDB
     const ticketData = {
       ...data,
-      routeId: parseInt(data.routeId),
-      fromStopId: parseInt(data.fromStopId),
-      toStopId: parseInt(data.toStopId),
+      routeId: data.routeId, // Keep as string for MongoDB ID
+      fromStopId: data.fromStopId, // Keep as string for MongoDB ID
+      toStopId: data.toStopId, // Keep as string for MongoDB ID
       departureTime: new Date(data.departureTime),
       status: "active",
     };
