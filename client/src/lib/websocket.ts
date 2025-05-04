@@ -144,7 +144,8 @@ export function useBusLocationUpdates() {
 
     const unregisterBusLocations = registerHandler("busLocations", (event) => {
       const data = JSON.parse(event.data);
-      setBusLocations(data.data);
+      console.log("Received bus locations:", data.data);
+      setBusLocations(data.data || []);
     });
 
     const unregisterBusLocationUpdate = registerHandler(

@@ -36,20 +36,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Send initial data based on role
           if (data.role === 'passenger') {
+            // Find active buses
             const activeBuses = await Bus.find({ status: 'active' })
               .populate({
+                path: 'driverId',
+                select: 'username fullName email role'
+              })
+              .populate({
                 path: 'routeId',
-                populate: {
-                  path: 'routeStops',
-                  populate: {
-                    path: 'stopId'
-                  }
-                }
+                select: 'name description status'
               });
+            
+            // Process the buses for consistency with frontend expectations
+            const processedBuses = activeBuses.map(bus => {
+              const busObj = bus.toObject();
+              
+              // Make sure each bus has a driver and route field
+              if (busObj.driverId && typeof busObj.driverId === 'object') {
+                busObj.driver = busObj.driverId;
+              }
+              
+              if (busObj.routeId && typeof busObj.routeId === 'object') {
+                busObj.route = busObj.routeId;
+              }
+              
+              return busObj;
+            });
+            
+            console.log("Sending active buses to passenger:", processedBuses);
             
             ws.send(JSON.stringify({
               type: 'busLocations',
-              data: convertToPlainObject(activeBuses)
+              data: processedBuses
             }));
           } else if (data.role === 'driver') {
             const driverBus = await Bus.findOne({ driverId: data.userId })

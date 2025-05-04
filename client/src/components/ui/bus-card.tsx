@@ -7,18 +7,20 @@ import { useEffect, useState } from "react";
 
 type BusCardProps = {
   bus: Bus & { 
+    _id?: string;
     route?: Route & { 
       routeStops?: Array<{ 
         stop: { 
           name: string;
-          id: number;
+          id?: number;
+          _id?: string;
         }; 
         order: number;
         scheduledArrival?: string;
       }> 
     } 
   };
-  onTrackClick?: (busId: number) => void;
+  onTrackClick?: (busId: number | string) => void;
 };
 
 export function BusCard({ bus, onTrackClick }: BusCardProps) {
@@ -44,7 +46,8 @@ export function BusCard({ bus, onTrackClick }: BusCardProps) {
       ? { type: "delayed", label: "Delayed" }
       : { type: "on-time", label: "On Time" }
     );
-  }, [bus.id]);
+    // Use either id or _id for the dependency
+  }, [bus.id || bus._id]);
   
   // Find the current and next stop
   const currentStopIndex = bus.route?.routeStops?.findIndex(
@@ -112,7 +115,7 @@ export function BusCard({ bus, onTrackClick }: BusCardProps) {
             </div>
             <Button 
               size="sm"
-              onClick={() => onTrackClick?.(bus.id)}
+              onClick={() => onTrackClick?.(bus._id || bus.id)}
             >
               Track
             </Button>
