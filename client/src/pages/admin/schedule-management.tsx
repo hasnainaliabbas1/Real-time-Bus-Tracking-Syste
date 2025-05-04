@@ -111,7 +111,12 @@ export default function ScheduleManagement() {
     queryKey: ["/api/buses"],
     select: (data) => {
       console.log("Buses data:", data);
-      return data?.filter((bus: any) => bus.status === "active");
+      // Ensure data is an array before filtering
+      if (!data || !Array.isArray(data)) {
+        console.log("Buses data is not an array:", data);
+        return [];
+      }
+      return data.filter((bus: any) => bus.status === "active");
     }
   });
 
@@ -120,7 +125,12 @@ export default function ScheduleManagement() {
     queryKey: ["/api/routes"],
     select: (data) => {
       console.log("Routes data:", data);
-      return data?.filter((route: any) => route.status === "active");
+      // Ensure data is an array before filtering
+      if (!data || !Array.isArray(data)) {
+        console.log("Routes data is not an array:", data);
+        return [];
+      }
+      return data.filter((route: any) => route.status === "active");
     }
   });
 
@@ -189,14 +199,27 @@ export default function ScheduleManagement() {
       return values;
     },
     onSuccess: (data) => {
-      const busObj = buses?.find((b: any) => b.id === parseInt(data.busId));
-      const routeObj = routes?.find((r: any) => r.id === parseInt(data.routeId));
+      console.log("Schedule added successfully, finding related objects:", data);
+      
+      // Find the bus by either _id or id, handling string or number formats
+      const busObj = buses?.find((b: any) => {
+        const busId = b._id || b.id;
+        return busId && busId.toString() === data.busId.toString();
+      });
+      
+      // Find the route by either _id or id, handling string or number formats
+      const routeObj = routes?.find((r: any) => {
+        const routeId = r._id || r.id;
+        return routeId && routeId.toString() === data.routeId.toString();
+      });
+      
+      console.log("Found related objects:", { busObj, routeObj });
       
       const newSchedule = {
         id: schedules.length + 1,
-        busId: parseInt(data.busId),
+        busId: data.busId,
         bus: busObj,
-        routeId: parseInt(data.routeId),
+        routeId: data.routeId,
         route: routeObj,
         day: selectedDay,
         scheduledDeparture: data.scheduledDeparture,
@@ -520,54 +543,79 @@ export default function ScheduleManagement() {
                     </div>
                   </div>
                   
+                  {/* Loading state */}
                   {isLoadingRoutes || isLoadingBuses ? (
                     <div className="flex justify-center items-center h-40">
                       <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
-                  ) : routes?.length === 0 ? (
+                  ) : null}
+                  
+                  {/* No routes */}
+                  {!isLoadingRoutes && !isLoadingBuses && (!routes || routes.length === 0) ? (
                     <div className="text-center py-8 text-gray-500">
                       No routes available
                     </div>
-                  ) : daySchedules.length === 0 ? (
+                  ) : null}
+                  
+                  {/* No schedules */}
+                  {!isLoadingRoutes && !isLoadingBuses && routes && routes.length > 0 && daySchedules.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       No schedules for {selectedDay}
                     </div>
-                  ) : (
-                    // Group schedules by route
-                    Object.values(daySchedules.reduce((acc: any, schedule) => {
-                      if (!acc[schedule.routeId]) {
-                        acc[schedule.routeId] = {
-                          route: schedule.route,
-                          schedules: []
-                        };
-                      }
-                      acc[schedule.routeId].schedules.push(schedule);
-                      return acc;
-                    }, {})).map((groupedSchedule: any) => (
-                      <div key={groupedSchedule.route.id} className="flex py-4 border-b border-gray-100">
-                        <div className="w-40 font-medium truncate">{groupedSchedule.route.name}</div>
-                        <div className="flex-1 relative" style={{ height: '40px' }}>
-                          {groupedSchedule.schedules.map((schedule: any) => (
-                            <div
-                              key={schedule.id}
-                              className="absolute top-0 h-10 bg-primary text-white px-2 py-1 rounded flex items-center min-w-[80px]"
-                              style={getSchedulePositionStyle(schedule.scheduledDeparture)}
-                            >
-                              <div className="truncate text-xs">
-                                {schedule.bus.busNumber} - {schedule.scheduledDeparture}
-                              </div>
-                              <button 
-                                className="ml-1 text-white hover:text-red-200"
-                                onClick={() => handleDeleteSchedule(schedule.id)}
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
+                  ) : null}
+                  
+                  {/* Schedules timeline */}
+                  {!isLoadingRoutes && !isLoadingBuses && daySchedules.length > 0 ? (
+                    <div>
+                      {/* Group and display schedules */}
+                      {Object.values(daySchedules.reduce((acc: any, schedule) => {
+                        // Use either _id or id for the route ID
+                        const routeId = schedule.routeId?.toString() || '';
+                        
+                        if (!acc[routeId]) {
+                          acc[routeId] = {
+                            route: schedule.route,
+                            schedules: []
+                          };
+                        }
+                        acc[routeId].schedules.push(schedule);
+                        return acc;
+                      }, {})).map((groupedSchedule: any) => {
+                        // Get route ID safely
+                        const routeId = (groupedSchedule.route?._id || groupedSchedule.route?.id || 'unknown').toString();
+                        
+                        return (
+                          <div key={routeId} className="flex py-4 border-b border-gray-100">
+                            <div className="w-40 font-medium truncate">{groupedSchedule.route?.name || 'Unknown Route'}</div>
+                            <div className="flex-1 relative" style={{ height: '40px' }}>
+                              {groupedSchedule.schedules.map((schedule: any) => {
+                                // Get schedule ID safely
+                                const scheduleId = schedule.id || 'unknown';
+                                
+                                return (
+                                  <div
+                                    key={scheduleId}
+                                    className="absolute top-0 h-10 bg-primary text-white px-2 py-1 rounded flex items-center min-w-[80px]"
+                                    style={getSchedulePositionStyle(schedule.scheduledDeparture)}
+                                  >
+                                    <div className="truncate text-xs">
+                                      {schedule.bus?.busNumber || 'Unknown Bus'} - {schedule.scheduledDeparture}
+                                    </div>
+                                    <button 
+                                      className="ml-1 text-white hover:text-red-200"
+                                      onClick={() => handleDeleteSchedule(scheduleId)}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                );
+                              })}
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))
-                  )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </CardContent>
@@ -592,41 +640,40 @@ export default function ScheduleManagement() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Display scheduled departures */}
                   {daySchedules
-                    .sort((a, b) => {
-                      // Sort by departure time
-                      return a.scheduledDeparture.localeCompare(b.scheduledDeparture);
+                    .sort((a, b) => a.scheduledDeparture.localeCompare(b.scheduledDeparture))
+                    .map((schedule) => {
+                      const scheduleId = schedule.id || 'unknown';
+                      return (
+                        <div key={scheduleId} className="border rounded-lg p-4 flex flex-col">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="text-sm font-medium">{schedule.scheduledDeparture}</div>
+                              <div className="text-xs text-gray-500">{selectedDay}</div>
+                            </div>
+                            <button 
+                              className="text-red-500 hover:text-red-700"
+                              onClick={() => handleDeleteSchedule(scheduleId)}
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                          <div className="mt-2">
+                            <div className="font-medium">{schedule.route?.name || 'Unknown Route'}</div>
+                            <div className="text-sm text-gray-600">Bus: {schedule.bus?.busNumber || 'Unknown Bus'}</div>
+                          </div>
+                          {schedule.route?.routeStops && schedule.route.routeStops.length > 0 && (
+                            <div className="mt-2 text-xs text-gray-500 flex items-center">
+                              <div>{schedule.route.routeStops[0].stop?.name || 'Unknown Stop'}</div>
+                              <ArrowRight className="h-3 w-3 mx-1" />
+                              <div>{schedule.route.routeStops[schedule.route.routeStops.length - 1].stop?.name || 'Unknown Stop'}</div>
+                            </div>
+                          )}
+                        </div>
+                      );
                     })
-                    .map((schedule) => (
-                      <div 
-                        key={schedule.id}
-                        className="border rounded-lg p-4 flex flex-col"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="text-sm font-medium">{schedule.scheduledDeparture}</div>
-                            <div className="text-xs text-gray-500">{selectedDay}</div>
-                          </div>
-                          <button 
-                            className="text-red-500 hover:text-red-700"
-                            onClick={() => handleDeleteSchedule(schedule.id)}
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                        <div className="mt-2">
-                          <div className="font-medium">{schedule.route.name}</div>
-                          <div className="text-sm text-gray-600">Bus: {schedule.bus.busNumber}</div>
-                        </div>
-                        {schedule.route.routeStops && schedule.route.routeStops.length > 0 && (
-                          <div className="mt-2 text-xs text-gray-500 flex items-center">
-                            <div>{schedule.route.routeStops[0].stop?.name}</div>
-                            <ArrowRight className="h-3 w-3 mx-1" />
-                            <div>{schedule.route.routeStops[schedule.route.routeStops.length - 1].stop?.name}</div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                  }
                 </div>
               )}
             </CardContent>
