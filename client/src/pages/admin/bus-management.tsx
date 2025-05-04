@@ -162,7 +162,7 @@ export default function BusManagement() {
         description: `The bus has been ${editingBus ? "updated" : "created"} successfully.`,
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         title: `Failed to ${editingBus ? "update" : "create"} bus`,
         description: error.message,
@@ -190,7 +190,7 @@ export default function BusManagement() {
         description: `The route has been ${editingRoute ? "updated" : "created"} successfully.`,
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         title: `Failed to ${editingRoute ? "update" : "create"} route`,
         description: error.message,
@@ -201,7 +201,7 @@ export default function BusManagement() {
 
   // Delete mutation
   const deleteMutation = useMutation({
-    mutationFn: async ({ id, type }: { id: number | string; type: 'bus' | 'route' }) => {
+    mutationFn: async ({ id, type }) => {
       const res = await apiRequest("DELETE", `/api/${type === 'bus' ? 'buses' : 'routes'}/${id}`);
       return { id, type };
     },
@@ -216,7 +216,7 @@ export default function BusManagement() {
         description: `The ${data.type === 'bus' ? 'bus' : 'route'} has been deleted successfully.`,
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         title: `Failed to delete ${deletingItem?.type}`,
         description: error.message,
@@ -226,7 +226,7 @@ export default function BusManagement() {
   });
 
   // Initialize bus form
-  const busForm = useForm<BusFormValues>({
+  const busForm = useForm({
     resolver: zodResolver(busFormSchema),
     defaultValues: {
       busNumber: "",
@@ -238,7 +238,7 @@ export default function BusManagement() {
   });
 
   // Initialize route form
-  const routeForm = useForm<RouteFormValues>({
+  const routeForm = useForm({
     resolver: zodResolver(routeFormSchema),
     defaultValues: {
       name: "",
@@ -302,7 +302,7 @@ export default function BusManagement() {
     });
   };
 
-  const handleDeleteItem = (id: number | string, type: 'bus' | 'route') => {
+  const handleDeleteItem = (id, type) => {
     setDeletingItem({ id, type });
     setIsDeleteDialogOpen(true);
   };
@@ -313,11 +313,11 @@ export default function BusManagement() {
     }
   };
 
-  const handleBusSubmit = (values: BusFormValues) => {
+  const handleBusSubmit = (values) => {
     busFormMutation.mutate(values);
   };
 
-  const handleRouteSubmit = (values: RouteFormValues) => {
+  const handleRouteSubmit = (values) => {
     routeFormMutation.mutate(values);
   };
 
