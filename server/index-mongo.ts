@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { initializeStorage } from "./mongo-storage";
-import { registerRoutes } from "./mongo-routes";
+import { registerRoutes, seedInitialData } from "./mongo-routes";
 import { setupAuth } from "./auth";
 import { setupVite, serveStatic, log } from "./vite";
 

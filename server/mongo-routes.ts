@@ -924,6 +924,54 @@ export async function seedInitialData() {
       await passengerUser.save();
       console.log('Passenger user created');
     }
+
+    // Create RouteStop connections for existing routes
+    const routeStopsCount = await RouteStop.countDocuments();
+    if (routeStopsCount === 0) {
+      const routes = await Route.find({});
+      
+      for (const route of routes) {
+        // Check if route has embedded stops
+        if (route.stops && Array.isArray(route.stops) && route.stops.length > 0) {
+          console.log(`Creating RouteStop connections for route: ${route.name}`);
+          
+          // For each stop in the route
+          for (let i = 0; i < route.stops.length; i++) {
+            const stopData = route.stops[i];
+            
+            // Check if stop exists already
+            let stop = await Stop.findOne({ name: stopData.name });
+            
+            // If stop doesn't exist, create it
+            if (!stop) {
+              stop = new Stop({
+                name: stopData.name,
+                location: {
+                  lat: stopData.location?.coordinates?.[1] || 0,
+                  lng: stopData.location?.coordinates?.[0] || 0
+                },
+                description: `Stop for ${route.name}`
+              });
+              await stop.save();
+              console.log(`Created stop: ${stop.name}`);
+            }
+            
+            // Create RouteStop connection
+            const routeStop = new RouteStop({
+              routeId: route._id,
+              stopId: stop._id,
+              order: i,
+              scheduledArrival: stopData.arrivalTime || "",
+              scheduledDeparture: stopData.departureTime || ""
+            });
+            
+            await routeStop.save();
+            console.log(`Created RouteStop connection for stop: ${stop.name} on route: ${route.name}`);
+          }
+        }
+      }
+      console.log("RouteStop connections created");
+    }
   } catch (error) {
     console.error('Error seeding initial data:', error);
   }
