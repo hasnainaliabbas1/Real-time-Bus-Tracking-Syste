@@ -248,19 +248,19 @@ export default function BusManagement() {
   });
 
   // Filter buses based on search term
-  const filteredBuses = busesData?.filter((bus: any) => 
+  const filteredBuses = busesData?.filter((bus) => 
     bus.busNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (bus.driver?.username && bus.driver?.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (bus.route?.name && bus.route?.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Filter routes based on search term
-  const filteredRoutes = routesData?.filter((route: any) => 
+  const filteredRoutes = routesData?.filter((route) => 
     route.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (route.description && route.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleEditBus = (bus: any) => {
+  const handleEditBus = (bus) => {
     setEditingBus(bus);
     busForm.reset({
       busNumber: bus.busNumber,
@@ -284,7 +284,7 @@ export default function BusManagement() {
     });
   };
 
-  const handleEditRoute = (route: any) => {
+  const handleEditRoute = (route) => {
     setEditingRoute(route);
     routeForm.reset({
       name: route.name,
@@ -499,7 +499,7 @@ export default function BusManagement() {
                                       <SelectItem value="loading" disabled>
                                         <Loader2 className="h-4 w-4 animate-spin" />
                                       </SelectItem>
-                                    ) : drivers?.map((driver: any) => (
+                                    ) : drivers?.map((driver) => (
                                       <SelectItem key={driver._id || driver.id} value={(driver._id || driver.id).toString()}>
                                         {driver.username} {driver.fullName ? `(${driver.fullName})` : ''}
                                       </SelectItem>
@@ -531,7 +531,7 @@ export default function BusManagement() {
                                       <SelectItem value="loading" disabled>
                                         <Loader2 className="h-4 w-4 animate-spin" />
                                       </SelectItem>
-                                    ) : routesData?.map((route: any) => (
+                                    ) : routesData?.map((route) => (
                                       <SelectItem key={route._id || route.id} value={(route._id || route.id).toString()}>
                                         {route.name}
                                       </SelectItem>
@@ -649,7 +649,7 @@ export default function BusManagement() {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        filteredBuses?.map((bus: any) => (
+                        filteredBuses?.map((bus) => (
                           <TableRow key={bus._id || bus.id}>
                             <TableCell className="font-medium">{bus.busNumber}</TableCell>
                             <TableCell>{bus.capacity}</TableCell>
@@ -744,7 +744,7 @@ export default function BusManagement() {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        filteredRoutes?.map((route: any) => (
+                        filteredRoutes?.map((route) => (
                           <TableRow key={route._id || route.id}>
                             <TableCell className="font-medium">{route.name}</TableCell>
                             <TableCell>{route.description || <span className="text-gray-400">No description</span>}</TableCell>
