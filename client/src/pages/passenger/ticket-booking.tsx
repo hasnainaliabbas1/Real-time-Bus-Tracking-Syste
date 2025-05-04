@@ -59,10 +59,21 @@ export default function TicketBooking() {
   });
 
   // Fetch stops for selected route
-  const { data: routeDetails, isLoading: isLoadingRouteDetails } = useQuery({
+  const { 
+    data: routeDetails, 
+    isLoading: isLoadingRouteDetails 
+  } = useQuery({
     queryKey: ["/api/routes", selectedRoute],
-    enabled: !!selectedRoute,
+    enabled: !!selectedRoute
   });
+  
+  // Log route data for debugging
+  React.useEffect(() => {
+    if (routeDetails) {
+      console.log("Route details loaded:", routeDetails);
+      console.log("Route stops:", routeDetails.routeStops);
+    }
+  }, [routeDetails]);
 
   // Book ticket mutation
   const bookTicketMutation = useMutation({

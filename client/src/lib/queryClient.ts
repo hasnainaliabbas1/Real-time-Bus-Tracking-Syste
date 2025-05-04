@@ -29,7 +29,17 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    // Handle path parameters in the queryKey
+    let path = queryKey[0] as string;
+    
+    // If there's a second parameter in the queryKey, append it to the path
+    if (queryKey.length > 1 && queryKey[1]) {
+      path = `${path}/${queryKey[1]}`;
+    }
+    
+    console.log("Fetching from:", path);
+    
+    const res = await fetch(path, {
       credentials: "include",
     });
 
