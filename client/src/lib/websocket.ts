@@ -1,55 +1,96 @@
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth.js";
 
-type MessageHandler = (event: MessageEvent) => void;
+interface User {
+  id?: number;
+  _id?: string;
+  role: string;
+}
+
+interface Location {
+  lat: number;
+  lng: number;
+}
+
+interface Bus {
+  id?: number;
+  _id?: string;
+  currentLocation?: Location;
+  [key: string]: any;
+}
+
+interface WebSocketMessage {
+  type: string;
+  [key: string]: any;
+}
+
+// Function to get WebSocket URL
+function getWebSocketURL(): string {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = window.location.hostname;
+  const port = process.env.NODE_ENV === 'development' ? '5000' : window.location.port;
+  return `${protocol}//${host}:${port}`;
+}
 
 export function useWebSocket() {
-  const { user } = useAuth();
+  const { user } = useAuth() as { user: User | null };
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
-  const messageHandlers = useRef<Map<string, MessageHandler>>(new Map());
+  const messageHandlers = useRef(new Map<string, (event: MessageEvent) => void>());
+  const reconnectTimeoutRef = useRef<number>();
+  const reconnectAttempts = useRef(0);
+  const MAX_RECONNECT_ATTEMPTS = 5;
 
-  // Initialize WebSocket connection
-  useEffect(() => {
-    if (!user) return;
-
+  const connect = () => {
     try {
-      // Instead of trying to compute the URL dynamically, 
-      // use a direct path relative to the current page
-      const wsUrl = `/ws`;
+      if (reconnectAttempts.current >= MAX_RECONNECT_ATTEMPTS) {
+        console.error('Max reconnection attempts reached');
+        return;
+      }
+
+      const wsUrl = getWebSocketURL();
       console.log("Connecting to WebSocket at:", wsUrl);
       
-      // Create WebSocket connection
-      const socket = new WebSocket(
-        (window.location.protocol === "https:" ? "wss://" : "ws://") + 
-        window.location.host + 
-        wsUrl
-      );
+      const socket = new WebSocket(wsUrl);
       socketRef.current = socket;
 
       socket.onopen = () => {
+        console.log("WebSocket connected");
         setIsConnected(true);
-        // Authenticate the WebSocket connection
-        // Get the appropriate ID based on whether we're using MongoDB or SQL
-        const userId = typeof user.id === 'number' ? user.id : 
-                      (user as any)._id ? (user as any)._id : user.id;
-                      
-        socket.send(
-          JSON.stringify({
-            type: "auth",
-            userId: userId,
-            role: user.role,
-          })
-        );
+        reconnectAttempts.current = 0;
+
+        if (user) {
+          const userId = typeof user.id === 'number' ? user.id : 
+                        (user._id ? user._id : user.id);
+                        
+          socket.send(
+            JSON.stringify({
+              type: "auth",
+              userId,
+              role: user.role
+            })
+          );
+        }
       };
 
-      socket.onclose = () => {
+      socket.onclose = (event) => {
+        console.log("WebSocket disconnected", event.code, event.reason);
         setIsConnected(false);
+
+        // Attempt to reconnect after a delay that increases with each attempt
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 10000);
+        reconnectAttempts.current++;
+        
+        reconnectTimeoutRef.current = window.setTimeout(() => {
+          if (user) connect();
+        }, delay);
       };
 
-      socket.onmessage = (event) => {
+      socket.onmessage = (event: MessageEvent) => {
         try {
           const data = JSON.parse(event.data);
+          console.log("Received message:", data);
+          
           const handler = messageHandlers.current.get(data.type);
           if (handler) {
             handler(event);
@@ -59,23 +100,40 @@ export function useWebSocket() {
         }
       };
 
-      socket.onerror = (error) => {
+      socket.onerror = (error: Event) => {
         console.error("WebSocket error:", error);
-      };
-
-      return () => {
-        if (socket.readyState === WebSocket.OPEN) {
-          socket.close();
-        }
       };
     } catch (error) {
       console.error("Error setting up WebSocket:", error);
-      return () => {}; // Return empty cleanup function on error
+      // Attempt to reconnect after a delay
+      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 10000);
+      reconnectAttempts.current++;
+      
+      reconnectTimeoutRef.current = window.setTimeout(() => {
+        if (user) connect();
+      }, delay);
     }
+  };
+
+  // Initialize WebSocket connection
+  useEffect(() => {
+    if (!user) return;
+
+    connect();
+
+    return () => {
+      reconnectAttempts.current = MAX_RECONNECT_ATTEMPTS; // Prevent reconnection on unmount
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        socketRef.current.close();
+      }
+    };
   }, [user]);
 
   // Send a message through the WebSocket
-  const sendMessage = (message: object) => {
+  const sendMessage = (message: WebSocketMessage) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify(message));
     } else {
@@ -84,7 +142,7 @@ export function useWebSocket() {
   };
 
   // Register a message handler
-  const registerHandler = (type: string, handler: MessageHandler) => {
+  const registerHandler = (type: string, handler: (event: MessageEvent) => void) => {
     messageHandlers.current.set(type, handler);
 
     return () => {
@@ -102,19 +160,21 @@ export function useWebSocket() {
 // Hook to send location updates for drivers
 export function useLocationUpdater() {
   const { sendMessage, isConnected } = useWebSocket();
-  const { user } = useAuth();
+  const { user } = useAuth() as { user: User | null };
 
   useEffect(() => {
     if (!isConnected || user?.role !== "driver") return;
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
+        const location = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        
         sendMessage({
           type: "updateLocation",
-          location: {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          },
+          location,
         });
       },
       (error) => {
@@ -135,9 +195,9 @@ export function useLocationUpdater() {
 
 // Hook to listen for bus location updates for passengers
 export function useBusLocationUpdates() {
-  const [busLocations, setBusLocations] = useState<any[]>([]);
+  const [busLocations, setBusLocations] = useState<Bus[]>([]);
   const { registerHandler, isConnected } = useWebSocket();
-  const { user } = useAuth();
+  const { user } = useAuth() as { user: User | null };
 
   useEffect(() => {
     if (!isConnected || user?.role !== "passenger") return;
@@ -152,9 +212,8 @@ export function useBusLocationUpdates() {
       "busLocationUpdate",
       (event) => {
         const data = JSON.parse(event.data);
-        setBusLocations((prev) =>
+        setBusLocations((prev: Bus[]) =>
           prev.map((bus) => {
-            // Support both MongoDB _id and SQL id
             const busId = bus._id || bus.id;
             const dataBusId = data.data.busId;
             return busId === dataBusId
@@ -178,7 +237,7 @@ export function useBusLocationUpdates() {
 export function useDriverRouteUpdates() {
   const [driverRoute, setDriverRoute] = useState<any>(null);
   const { registerHandler, isConnected } = useWebSocket();
-  const { user } = useAuth();
+  const { user } = useAuth() as { user: User | null };
 
   useEffect(() => {
     if (!isConnected || user?.role !== "driver") return;
@@ -198,9 +257,9 @@ export function useDriverRouteUpdates() {
 
 // Hook to listen for new incident reports for admins
 export function useIncidentUpdates() {
-  const [newIncident, setNewIncident] = useState<any | null>(null);
+  const [newIncident, setNewIncident] = useState<any>(null);
   const { registerHandler, isConnected } = useWebSocket();
-  const { user } = useAuth();
+  const { user } = useAuth() as { user: User | null };
 
   useEffect(() => {
     if (!isConnected || user?.role !== "admin") return;
@@ -208,11 +267,6 @@ export function useIncidentUpdates() {
     const unregister = registerHandler("newIncident", (event) => {
       const data = JSON.parse(event.data);
       setNewIncident(data.data);
-      
-      // Clear the new incident after 5 seconds
-      setTimeout(() => {
-        setNewIncident(null);
-      }, 5000);
     });
 
     return () => {

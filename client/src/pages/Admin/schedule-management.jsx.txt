@@ -1,0 +1,500 @@
+import { useState, useEffect } from "react";
+import { Link } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
+import { 
+  Gauge, 
+  Users, 
+  Bus, 
+  Route as RouteIcon, 
+  Calendar, 
+  AlertTriangle, 
+  BarChart, 
+  Plus, 
+  Clock,
+  ArrowRight,
+  CheckSquare,
+  X,
+  LogOut,
+  Loader2,
+  Edit,
+  Trash
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle,
+  CardDescription
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { format } from "date-fns";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+// Schedule form schema
+const scheduleFormSchema = z.object({
+  busId: z.string().min(1, "Bus is required"),
+  routeId: z.string().min(1, "Route is required"),
+  scheduledDeparture: z.string().min(1, "Departure time is required"),
+});
+
+// Helper function to map days of the week
+const getDayName = (date) => {
+  return format(date, 'EEEE');
+};
+
+// Helper function to get timeline hours
+const getTimelineHours = () => {
+  const hours = [];
+  for (let i = 5; i <= 23; i++) {
+    hours.push(`${i}:00`);
+  }
+  return hours;
+};
+
+export default function ScheduleManagement() {
+  const { user, logoutMutation } = useAuth();
+  const { toast } = useToast();
+  const [selectedDay, setSelectedDay] = useState('Monday');
+  const [selectedRoute, setSelectedRoute] = useState(null);
+  const [editingSchedule, setEditingSchedule] = useState(null);
+  const [isAddingSchedule, setIsAddingSchedule] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState(null);
+  const [schedules, setSchedules] = useState([]);
+
+  // Create form
+  const form = useForm({
+    resolver: zodResolver(scheduleFormSchema),
+    defaultValues: {
+      busId: '',
+      routeId: '',
+      scheduledDeparture: ''
+    }
+  });
+
+  // Create a date for visualization (default to current week)
+  const today = new Date();
+  const dayOffset = today.getDay() - 1; // 0 is Sunday, 1 is Monday, etc.
+  
+  // Calculate dates for the week
+  const weekDates = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(today);
+    date.setDate(date.getDate() - dayOffset + i);
+    return {
+      date,
+      day: getDayName(date),
+      formattedDate: format(date, 'MMM dd'),
+    };
+  });
+
+  // Fetch buses
+  const { data: buses, isLoading: isLoadingBuses } = useQuery({
+    queryKey: ["/api/buses"],
+    select: (busData) => {
+      console.log("Buses data:", busData);
+      if (!busData || !Array.isArray(busData)) {
+        console.log("Buses data is not an array:", busData);
+        return [];
+      }
+      return busData.filter((bus) => bus.status === "active");
+    }
+  });
+
+  // Fetch routes
+  const { data: routes, isLoading: isLoadingRoutes } = useQuery({
+    queryKey: ["/api/routes"],
+    select: (data) => {
+      console.log("Routes data:", data);
+      if (!data || !Array.isArray(data)) {
+        console.log("Routes data is not an array:", data);
+        return [];
+      }
+      return data.filter((route) => route.status === "active");
+    }
+  });
+
+  useEffect(() => {
+    if (buses && routes) {
+      console.log("Creating mock schedules with buses and routes:", { buses, routes });
+      const mockSchedules = [];
+      
+      for (let i = 0; i < 10; i++) {
+        const bus = buses[Math.floor(Math.random() * buses.length)];
+        const route = routes[Math.floor(Math.random() * routes.length)];
+        const hour = Math.floor(Math.random() * 12) + 8;
+        
+        const busId = bus?._id || bus?.id;
+        const routeId = route?._id || route?.id;
+        
+        if (bus && route && busId && routeId) {
+          mockSchedules.push({
+            id: i + 1,
+            busId,
+            bus,
+            routeId,
+            route,
+            day: weekDates[Math.floor(Math.random() * 7)].day,
+            scheduledDeparture: `${hour}:${Math.floor(Math.random() * 6) * 10 || '00'}`
+          });
+        }
+      }
+      
+      console.log("Created mock schedules:", mockSchedules);
+      setSchedules(mockSchedules);
+    }
+  }, [buses, routes]);
+
+  // Filter schedules for selected day
+  const daySchedules = schedules.filter(schedule => 
+    schedule.day === selectedDay && 
+    (!selectedRoute || schedule.routeId === selectedRoute)
+  );
+
+  // Create a grid timeline for visualization
+  const timelineHours = getTimelineHours();
+
+  // Add schedule mutation
+  const addScheduleMutation = useMutation({
+    mutationFn: async (data) => {
+      const res = await apiRequest("POST", "/api/schedules", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/schedules"] });
+      setIsAddDialogOpen(false);
+      toast({
+        title: "Schedule added",
+        description: "The schedule has been added successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to add schedule",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAddSchedule = (values) => {
+    addScheduleMutation.mutate(values);
+  };
+
+  const handleDeleteSchedule = (id) => {
+    deleteScheduleMutation.mutate(id);
+  };
+
+  const getSchedulePositionStyle = (departureTime) => {
+    const [hour, minute] = departureTime.split(':').map(Number);
+    const startHour = 5;
+    const hourWidth = 100;
+    
+    const position = (hour - startHour) * hourWidth + (minute / 60) * hourWidth;
+    return {
+      left: `${position}px`,
+    };
+  };
+
+  // Delete schedule mutation
+  const deleteScheduleMutation = useMutation({
+    mutationFn: async (id) => {
+      const res = await apiRequest("DELETE", `/api/schedules/${id}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/schedules"] });
+      toast({
+        title: "Schedule deleted",
+        description: "The schedule has been deleted successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to delete schedule",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Edit schedule mutation
+  const editScheduleMutation = useMutation({
+    mutationFn: async ({ id, data }) => {
+      const res = await apiRequest("PUT", `/api/schedules/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/schedules"] });
+      setIsEditDialogOpen(false);
+      setSelectedSchedule(null);
+      toast({
+        title: "Schedule updated",
+        description: "The schedule has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to update schedule",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEditSchedule = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    editScheduleMutation.mutate({
+      id: selectedSchedule.id,
+      data: {
+        busId: formData.get("busId"),
+        routeId: formData.get("routeId"),
+        departureTime: formData.get("departureTime"),
+        arrivalTime: formData.get("arrivalTime"),
+      },
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b">
+        <div className="flex h-16 items-center px-4">
+          <div className="flex items-center gap-4">
+            <Link href="/admin/dashboard">
+              <Gauge className="h-8 w-8" />
+            </Link>
+            <h1 className="text-xl font-semibold">Admin Dashboard</h1>
+          </div>
+          <nav className="ml-8 flex items-center gap-4">
+            <Link href="/admin/users">
+              <Users className="h-4 w-4" />
+              Users
+            </Link>
+            <Link href="/admin/buses">
+              <Bus className="h-4 w-4" />
+              Buses
+            </Link>
+            <Link href="/admin/routes">
+              <RouteIcon className="h-4 w-4" />
+              Routes
+            </Link>
+            <Link href="/admin/schedules" className="font-semibold">
+              <Calendar className="h-4 w-4" />
+              Schedules
+            </Link>
+            <Link href="/admin/incidents">
+              <AlertTriangle className="h-4 w-4" />
+              Incidents
+            </Link>
+            <Link href="/admin/analytics">
+              <BarChart className="h-4 w-4" />
+              Analytics
+            </Link>
+          </nav>
+          <div className="ml-auto flex items-center gap-4">
+            <span className="text-sm text-muted-foreground">
+              Welcome, {user?.name}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => logoutMutation.mutate()}
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="p-8">
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-3xl font-bold tracking-tight">Schedule Management</h2>
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Schedule
+          </Button>
+        </div>
+
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Schedule Timeline</CardTitle>
+              <CardDescription>
+                View and manage bus schedules across the week
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  {weekDates.map(({ day, formattedDate }) => (
+                    <Button
+                      key={day}
+                      variant={selectedDay === day ? "default" : "outline"}
+                      onClick={() => setSelectedDay(day)}
+                      className="flex-1"
+                    >
+                      {day}
+                      <br />
+                      {formattedDate}
+                    </Button>
+                  ))}
+                </div>
+
+                <div className="relative overflow-x-auto">
+                  <div className="flex">
+                    {timelineHours.map((hour) => (
+                      <div
+                        key={hour}
+                        className="flex-none w-[100px] border-l border-border p-2 text-sm text-muted-foreground"
+                      >
+                        {hour}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="relative h-[200px] border-t">
+                    {daySchedules.map((schedule) => (
+                      <div
+                        key={schedule.id}
+                        className="absolute top-2 bg-primary text-primary-foreground rounded-md p-2 text-sm"
+                        style={getSchedulePositionStyle(schedule.scheduledDeparture)}
+                      >
+                        {schedule.route.name}
+                        <br />
+                        Bus {schedule.bus.number}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Schedule</DialogTitle>
+            <DialogDescription>
+              Create a new bus schedule
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleAddSchedule)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="busId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bus</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a bus" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {buses?.map((bus) => (
+                          <SelectItem key={bus._id} value={bus._id}>
+                            Bus {bus.number}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="routeId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Route</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a route" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {routes?.map((route) => (
+                          <SelectItem key={route._id} value={route._id}>
+                            {route.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="scheduledDeparture"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Departure Time</FormLabel>
+                    <FormControl>
+                      <Input type="time" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit" disabled={addScheduleMutation.isPending}>
+                  {addScheduleMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Add Schedule
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

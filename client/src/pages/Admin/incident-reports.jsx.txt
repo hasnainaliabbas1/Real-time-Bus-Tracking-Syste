@@ -1,0 +1,436 @@
+import { useState } from "react";
+import { Link } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth.jsx";
+import { useIncidentUpdates } from "@/lib/websocket.ts";
+import { 
+  Gauge, 
+  Users, 
+  Bus, 
+  Route as RouteIcon, 
+  Calendar, 
+  AlertTriangle, 
+  BarChart, 
+  Phone,
+  CheckCircle,
+  Filter,
+  MapPin,
+  MessageCircle,
+  Clock,
+  CircleAlert,
+  Wrench,
+  Car,
+  AlertOctagon,
+  LogOut,
+  Loader2
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle,
+  CardDescription
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { format } from "date-fns";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+export default function IncidentReports() {
+  const { user, logoutMutation } = useAuth();
+  const { toast } = useToast();
+  const newIncident = useIncidentUpdates();
+  
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [selectedIncident, setSelectedIncident] = useState(null);
+  const [isResolutionDialogOpen, setIsResolutionDialogOpen] = useState(false);
+  const [resolutionNote, setResolutionNote] = useState("");
+
+  // Fetch incidents
+  const { data: incidents, isLoading } = useQuery({
+    queryKey: ["/api/incidents"],
+  });
+
+  // Update incident status mutation
+  const updateIncidentMutation = useMutation({
+    mutationFn: async ({ id, status }) => {
+      const res = await apiRequest("PUT", `/api/incidents/${id}`, { status });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+      setIsResolutionDialogOpen(false);
+      setSelectedIncident(null);
+      setResolutionNote("");
+      
+      toast({
+        title: "Incident updated",
+        description: "The incident status has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to update incident",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Apply filters
+  const filteredIncidents = incidents?.filter((incident) => 
+    (statusFilter === "all" || incident.status === statusFilter) &&
+    (typeFilter === "all" || incident.incidentType === typeFilter)
+  );
+
+  // Group incidents by status for the dashboard view
+  const reportedIncidents = incidents?.filter((i) => i.status === "reported") || [];
+  const inProgressIncidents = incidents?.filter((i) => i.status === "in_progress") || [];
+  const resolvedIncidents = incidents?.filter((i) => i.status === "resolved") || [];
+
+  // Incident type icon mapping
+  const getIncidentTypeIcon = (type) => {
+    switch (type) {
+      case "delay":
+        return <Clock className="h-5 w-5 text-amber-500" />;
+      case "breakdown":
+        return <Wrench className="h-5 w-5 text-orange-600" />;
+      case "accident":
+        return <Car className="h-5 w-5 text-red-600" />;
+      default:
+        return <AlertOctagon className="h-5 w-5 text-gray-600" />;
+    }
+  };
+
+  // Incident status badge
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "reported":
+        return <Badge variant="destructive">Reported</Badge>;
+      case "in_progress":
+        return <Badge variant="outline" className="bg-amber-100 text-amber-800 hover:bg-amber-100">In Progress</Badge>;
+      case "resolved":
+        return <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">Resolved</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
+
+  // Status action button
+  const getStatusActionButton = (incident) => {
+    switch (incident.status) {
+      case "reported":
+        return (
+          <Button 
+            size="sm" 
+            className="bg-amber-500 hover:bg-amber-600"
+            onClick={() => handleUpdateStatus(incident, "in_progress")}
+          >
+            <MessageCircle className="h-4 w-4 mr-2" />
+            Mark In Progress
+          </Button>
+        );
+      case "in_progress":
+        return (
+          <Button 
+            size="sm" 
+            className="bg-green-600 hover:bg-green-700"
+            onClick={() => {
+              setSelectedIncident(incident);
+              setIsResolutionDialogOpen(true);
+            }}
+          >
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Resolve
+          </Button>
+        );
+      case "resolved":
+        return (
+          <Button 
+            size="sm" 
+            variant="outline" 
+            disabled
+          >
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Resolved
+          </Button>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const handleUpdateStatus = (incident, status) => {
+    if (status === "resolved") {
+      // For resolved status, we'll open the resolution dialog
+      setSelectedIncident(incident);
+      setIsResolutionDialogOpen(true);
+    } else {
+      // For other status updates, we'll update directly
+      updateIncidentMutation.mutate({
+        id: incident.id,
+        status,
+      });
+    }
+  };
+
+  const handleResolveIncident = () => {
+    if (selectedIncident) {
+      updateIncidentMutation.mutate({
+        id: selectedIncident.id,
+        status: "resolved",
+      });
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <div className="bg-sidebar w-64 flex-shrink-0 hidden md:block">
+        <div className="p-4 border-b border-sidebar-border">
+          <h1 className="text-xl font-bold text-sidebar-foreground">BusTrack Admin</h1>
+        </div>
+        <nav className="mt-5 px-2">
+          <Link href="/admin">
+            <a className="group flex items-center px-2 py-2 text-base font-medium rounded-md text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground">
+              <Gauge className="mr-3 h-5 w-5" />
+              Dashboard
+            </a>
+          </Link>
+          <Link href="/admin/buses">
+            <a className="group flex items-center px-2 py-2 text-base font-medium rounded-md text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground mt-2">
+              <Bus className="mr-3 h-5 w-5" />
+              Buses
+            </a>
+          </Link>
+          <Link href="/admin/schedule">
+            <a className="group flex items-center px-2 py-2 text-base font-medium rounded-md text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground mt-2">
+              <Calendar className="mr-3 h-5 w-5" />
+              Schedule
+            </a>
+          </Link>
+          <Link href="/admin/incidents">
+            <a className="group flex items-center px-2 py-2 text-base font-medium rounded-md bg-sidebar-accent text-sidebar-accent-foreground mt-2">
+              <AlertTriangle className="mr-3 h-5 w-5" />
+              Incidents
+            </a>
+          </Link>
+          <Link href="/admin/analytics">
+            <a className="group flex items-center px-2 py-2 text-base font-medium rounded-md text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground mt-2">
+              <BarChart className="mr-3 h-5 w-5" />
+              Analytics
+            </a>
+          </Link>
+          <Separator className="my-4 bg-sidebar-border" />
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+            onClick={() => logoutMutation.mutate()}
+          >
+            <LogOut className="mr-3 h-5 w-5" />
+            Sign Out
+          </Button>
+        </nav>
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top header */}
+        <header className="bg-white shadow">
+          <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-800">Incident Reports</h2>
+            <div className="flex items-center">
+              <span className="text-sm text-gray-600 mr-4">
+                {user?.fullName || user?.username}
+              </span>
+            </div>
+          </div>
+        </header>
+
+        {/* Main content */}
+        <main className="flex-1 overflow-y-auto bg-gray-100 p-6">
+          {/* Incident Overview */}
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-gray-500">Reported Incidents</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">
+                  {reportedIncidents.length}
+                </div>
+                <p className="text-xs text-gray-500 flex items-center">
+                  <CircleAlert className="h-3 w-3 mr-1 text-red-600" />
+                  Require immediate attention
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-gray-500">In Progress</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-amber-600">
+                  {inProgressIncidents.length}
+                </div>
+                <p className="text-xs text-gray-500 flex items-center">
+                  <Clock className="h-3 w-3 mr-1 text-amber-600" />
+                  Currently being handled
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-gray-500">Resolved Today</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  {resolvedIncidents.length}
+                </div>
+                <p className="text-xs text-gray-500 flex items-center">
+                  <CheckCircle className="h-3 w-3 mr-1 text-green-600" />
+                  Successfully resolved
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters */}
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="reported">Reported</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="resolved">Resolved</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="delay">Delay</SelectItem>
+                    <SelectItem value="breakdown">Breakdown</SelectItem>
+                    <SelectItem value="accident">Accident</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Incidents List */}
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : filteredIncidents?.length === 0 ? (
+            <Alert>
+              <AlertTitle>No incidents found</AlertTitle>
+              <AlertDescription>
+                No incidents match your current filter criteria.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="space-y-4">
+              {filteredIncidents?.map((incident) => (
+                <Card key={incident.id}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        {getIncidentTypeIcon(incident.incidentType)}
+                        <div>
+                          <h3 className="font-semibold">{incident.title}</h3>
+                          <p className="text-sm text-gray-500">{incident.description}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        {getStatusBadge(incident.status)}
+                        {getStatusActionButton(incident)}
+                      </div>
+                    </div>
+                    <div className="mt-4 flex items-center text-sm text-gray-500">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      <span>{incident.location}</span>
+                      <span className="mx-2">•</span>
+                      <Clock className="h-4 w-4 mr-1" />
+                      <span>{format(new Date(incident.reportedAt), "PPp")}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* Resolution Dialog */}
+      <Dialog open={isResolutionDialogOpen} onOpenChange={setIsResolutionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resolve Incident</DialogTitle>
+            <DialogDescription>
+              Add a resolution note before marking this incident as resolved.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea
+              placeholder="Enter resolution details..."
+              value={resolutionNote}
+              onChange={(e) => setResolutionNote(e.target.value)}
+              className="min-h-[100px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsResolutionDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleResolveIncident}
+              disabled={!resolutionNote.trim()}
+            >
+              Resolve Incident
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

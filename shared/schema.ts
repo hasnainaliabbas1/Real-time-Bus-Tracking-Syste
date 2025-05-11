@@ -1,7 +1,20 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json, primaryKey } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { z } from "zod";
+import { pgTable, primaryKey } from "drizzle-orm/pg-core";
+import { serial, text, integer, timestamp, jsonb } from "drizzle-orm/pg-core/columns";
+import { createInsertSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
+
+// Define location type and use it in the schema
+type LocationType = {
+  lat: number;
+  lng: number;
+};
+
+// Type guard to validate location data
+export const isValidLocation = (location: unknown): location is LocationType => {
+  if (typeof location !== 'object' || !location) return false;
+  const loc = location as any;
+  return typeof loc.lat === 'number' && typeof loc.lng === 'number';
+};
 
 // User related tables
 export const users = pgTable("users", {
@@ -12,7 +25,7 @@ export const users = pgTable("users", {
   role: text("role", { enum: ["passenger", "driver", "admin"] }).notNull().default("passenger"),
   fullName: text("full_name"),
   phone: text("phone"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users, {
@@ -28,10 +41,10 @@ export const buses = pgTable("buses", {
   busNumber: text("bus_number").notNull().unique(),
   capacity: integer("capacity").notNull(),
   status: text("status", { enum: ["active", "inactive", "maintenance"] }).notNull().default("inactive"),
-  currentLocation: json("current_location").$type<{ lat: number, lng: number } | null>(),
+  currentLocation: jsonb("current_location"),
   driverId: integer("driver_id").references(() => users.id),
   routeId: integer("route_id").references(() => routes.id),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
 export const insertBusSchema = createInsertSchema(buses, {
@@ -55,8 +68,8 @@ export const insertRouteSchema = createInsertSchema(routes, {
 export const stops = pgTable("stops", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  location: json("location").$type<{ lat: number, lng: number }>().notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  location: jsonb("location"),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
 export const insertStopSchema = createInsertSchema(stops, {
@@ -120,10 +133,10 @@ export const incidents = pgTable("incidents", {
   reportedBy: integer("reported_by").references(() => users.id).notNull(),
   incidentType: text("incident_type", { enum: ["delay", "breakdown", "accident", "other"] }).notNull(),
   description: text("description").notNull(),
-  location: json("location").$type<{ lat: number, lng: number } | null>(),
+  location: jsonb("location"),
   status: text("status", { enum: ["reported", "in_progress", "resolved"] }).notNull().default("reported"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  resolvedAt: timestamp("resolved_at", { mode: "date" }),
 });
 
 export const insertIncidentSchema = createInsertSchema(incidents);
@@ -196,34 +209,4 @@ export const incidentsRelations = relations(incidents, ({ one }) => ({
 export const savedRoutesRelations = relations(savedRoutes, ({ one }) => ({
   user: one(users, { fields: [savedRoutes.userId], references: [users.id] }),
   route: one(routes, { fields: [savedRoutes.routeId], references: [routes.id] }),
-}));
-
-// Export types for frontend use
-export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
-
-export type Bus = typeof buses.$inferSelect;
-export type InsertBus = z.infer<typeof insertBusSchema>;
-
-export type Route = typeof routes.$inferSelect;
-export type InsertRoute = z.infer<typeof insertRouteSchema>;
-
-export type Stop = typeof stops.$inferSelect;
-export type InsertStop = z.infer<typeof insertStopSchema>;
-
-export type RouteStop = typeof routeStops.$inferSelect;
-
-export type Ticket = typeof tickets.$inferSelect;
-export type InsertTicket = z.infer<typeof insertTicketSchema>;
-
-export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
-export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;
-
-export type Subscription = typeof subscriptions.$inferSelect;
-export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
-
-export type Incident = typeof incidents.$inferSelect;
-export type InsertIncident = z.infer<typeof insertIncidentSchema>;
-
-export type SavedRoute = typeof savedRoutes.$inferSelect;
-export type InsertSavedRoute = z.infer<typeof insertSavedRouteSchema>;
+})); 

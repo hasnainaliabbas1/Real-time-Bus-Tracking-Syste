@@ -1,0 +1,317 @@
+import { useState } from "react";
+import { Link } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { ArrowLeft, Check, CalendarRange, Loader2 } from "lucide-react";
+import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount / 100);
+};
+
+export default function SubscriptionPlans() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+
+  // Fetch all subscription plans
+  const { data: plans, isLoading: isLoadingPlans } = useQuery({
+    queryKey: ["/api/subscription-plans"],
+  });
+
+  // Fetch user's subscriptions
+  const { data: subscriptions, isLoading: isLoadingSubscriptions } = useQuery({
+    queryKey: ["/api/subscriptions"],
+  });
+
+  // Subscribe to a plan
+  const subscribeMutation = useMutation({
+    mutationFn: async (planId) => {
+      const res = await apiRequest("POST", "/api/subscriptions", { planId });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+      setIsConfirmOpen(false);
+      toast({
+        title: "Subscription successful",
+        description: `You are now subscribed to the ${selectedPlan?.name} plan.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Subscription failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Cancel a subscription
+  const cancelSubscriptionMutation = useMutation({
+    mutationFn: async (id) => {
+      const res = await apiRequest("POST", `/api/subscriptions/${id}/cancel`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+      toast({
+        title: "Subscription cancelled",
+        description: "Your subscription has been cancelled successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to cancel subscription",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubscribe = (plan) => {
+    setSelectedPlan(plan);
+    setIsConfirmOpen(true);
+  };
+
+  const confirmSubscription = () => {
+    if (selectedPlan) {
+      subscribeMutation.mutate(selectedPlan.id);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Link href="/">
+                <Button variant="ghost" size="icon">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </Link>
+              <h1 className="ml-2 text-xl font-semibold text-gray-900">Subscription Plans</h1>
+            </div>
+            <div className="text-sm text-gray-500">
+              Welcome, {user?.fullName || user?.username}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <Tabs defaultValue="plans">
+          <TabsList className="mb-6">
+            <TabsTrigger value="plans">Available Plans</TabsTrigger>
+            <TabsTrigger value="my-subscriptions">My Subscriptions</TabsTrigger>
+          </TabsList>
+
+          {/* Available Plans Tab */}
+          <TabsContent value="plans">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight mb-6">Choose Your Travel Pass</h2>
+              
+              {isLoadingPlans ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : plans?.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {plans.map((plan) => (
+                    <Card key={plan.id} className="relative overflow-hidden">
+                      {plan.name.toLowerCase().includes('monthly') && (
+                        <div className="absolute top-0 right-0 bg-accent text-white px-3 py-1 text-xs font-medium">
+                          Best Value
+                        </div>
+                      )}
+                      <CardHeader>
+                        <CardTitle>{plan.name}</CardTitle>
+                        <CardDescription>{plan.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-center mb-6">
+                          <span className="text-3xl font-bold">{formatCurrency(plan.price)}</span>
+                          <span className="text-gray-500 ml-1">
+                            / {plan.duration === 1 ? 'day' : 
+                                plan.duration === 7 ? 'week' : 'month'}
+                          </span>
+                        </div>
+                        
+                        <ul className="space-y-2">
+                          <li className="flex items-center">
+                            <Check className="h-5 w-5 text-green-500 mr-2" />
+                            <span>Unlimited rides</span>
+                          </li>
+                          <li className="flex items-center">
+                            <Check className="h-5 w-5 text-green-500 mr-2" />
+                            <span>Valid for {plan.duration} days</span>
+                          </li>
+                          {plan.duration >= 7 && (
+                            <li className="flex items-center">
+                              <Check className="h-5 w-5 text-green-500 mr-2" />
+                              <span>Priority boarding</span>
+                            </li>
+                          )}
+                          {plan.duration >= 30 && (
+                            <li className="flex items-center">
+                              <Check className="h-5 w-5 text-green-500 mr-2" />
+                              <span>Discounted weekend trips</span>
+                            </li>
+                          )}
+                        </ul>
+                      </CardContent>
+                      <CardFooter>
+                        <Button 
+                          className="w-full" 
+                          onClick={() => handleSubscribe(plan)}
+                        >
+                          Subscribe Now
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-white rounded-lg shadow">
+                  <CalendarRange className="mx-auto h-12 w-12 text-gray-300" />
+                  <h3 className="mt-2 text-lg font-medium text-gray-900">No subscription plans available</h3>
+                  <p className="mt-1 text-sm text-gray-500">There are currently no subscription plans available.</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* My Subscriptions Tab */}
+          <TabsContent value="my-subscriptions">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight mb-6">My Active Subscriptions</h2>
+              
+              {isLoadingSubscriptions ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : subscriptions?.length > 0 ? (
+                <div className="space-y-6">
+                  {subscriptions.map((subscription) => (
+                    <Card key={subscription.id} className={`
+                      ${subscription.status === 'active' ? 'border-green-400' : 
+                        subscription.status === 'expired' ? 'border-gray-200' : 'border-red-400'}
+                    `}>
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <CardTitle>{subscription.plan?.name || 'Unknown Plan'}</CardTitle>
+                          <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            subscription.status === 'active' ? 'bg-green-100 text-green-800' : 
+                            subscription.status === 'expired' ? 'bg-gray-100 text-gray-600' : 
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
+                          </div>
+                        </div>
+                        <CardDescription>
+                          Subscription #{subscription.id}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm text-gray-500">Start Date</p>
+                              <p className="font-medium">
+                                {subscription.startDate ? format(new Date(subscription.startDate), 'MMM d, yyyy') : 'Unknown'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500">End Date</p>
+                              <p className="font-medium">
+                                {subscription.endDate ? format(new Date(subscription.endDate), 'MMM d, yyyy') : 'Unknown'}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {subscription.status === 'active' && (
+                            <Button
+                              variant="destructive"
+                              className="w-full mt-4"
+                              onClick={() => cancelSubscriptionMutation.mutate(subscription.id)}
+                              disabled={cancelSubscriptionMutation.isPending}
+                            >
+                              {cancelSubscriptionMutation.isPending ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Cancelling...
+                                </>
+                              ) : (
+                                'Cancel Subscription'
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-white rounded-lg shadow">
+                  <CalendarRange className="mx-auto h-12 w-12 text-gray-300" />
+                  <h3 className="mt-2 text-lg font-medium text-gray-900">No active subscriptions</h3>
+                  <p className="mt-1 text-sm text-gray-500">You don't have any active subscriptions.</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Subscription Confirmation Dialog */}
+        <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Subscription</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to subscribe to the {selectedPlan?.name} plan?
+                You will be charged {selectedPlan ? formatCurrency(selectedPlan.price) : ''}.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={confirmSubscription}
+                disabled={subscribeMutation.isPending}
+              >
+                {subscribeMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Subscribing...
+                  </>
+                ) : (
+                  'Confirm Subscription'
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </main>
+    </div>
+  );
+}
